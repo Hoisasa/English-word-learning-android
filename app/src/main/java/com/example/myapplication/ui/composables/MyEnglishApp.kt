@@ -5,25 +5,28 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.platform.LocalContext
-import com.example.myapplication.ui.composables.screens.ModeSelectScreen
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.myapplication.ui.composables.screens.OverviewScreen
-import com.example.myapplication.ui.composables.screens.OverviewScreenPreview
+import com.example.myapplication.ui.composables.screens.ModeSelectScreen
+import com.example.myapplication.ui.composables.screens.StudyScreenPreview
+import com.example.myapplication.ui.composables.screens.SummaryScreenPreview
 
 @SuppressLint("UnrememberedMutableState")
-@Preview(showBackground = true)
+@Preview(showBackground = true,
+    device = Devices.TABLET,
+    widthDp = 857,
+    heightDp = 1370
+)
 @Composable
 fun MyEnglishApp(modifier: Modifier = Modifier) {
     
@@ -41,6 +44,8 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
         "SubGroupsScreen" -> subgroups
         else -> mutableStateListOf()
     }
+    
+    val endOfLesson by remember { mutableStateOf(true) }
     
     val context = LocalContext.current
     
@@ -92,7 +97,11 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
             }
             
             "LessonScreen" -> {
-                OverviewScreenPreview()
+                if (!endOfLesson) {
+                    StudyScreenPreview()
+                } else {
+                    SummaryScreenPreview()
+                }
 //                LaunchedEffect(currentSubGroup) {
 //                    lesson_words.clear()
 //                    lesson_words.addAll(

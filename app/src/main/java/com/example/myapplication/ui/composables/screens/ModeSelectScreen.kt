@@ -36,7 +36,7 @@ fun ModeSelectScreen (
         Text("Choose mode"
         
         )
-        for (text in listOf("Overview", "Pracice", "Exam")) {
+        for (text in listOf("Overview", "Practice", "Exam")) {
             Button( onClick = { onModeChosen(text) },
                 modifier = Modifier.fillMaxWidth()
             ) {
