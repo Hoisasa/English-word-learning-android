@@ -19,47 +19,53 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.myapplication.ui.theme.MyGreen
 
+//Perfect use case for a lazy-loaded button with deferred logic. Here's how you can design it:
 
-//val subgroupsList = mutableStateListOf<String>()
+//💡 Behavior summary:
+//✅ Button shows: "Repeat Groups (3)"
+//⏳ Calculation runs only once per app start — and only if pressed (or eventually, when idle)
+//🔁 The count updates daily at most
+//🧘 Doesn't block or interrupt anything
 
-//@Composable
-//fun grouping(
-//    targetList: SnapshotStateList<String>,
-//    currentList: SnapshotStateList<String>,
-//    currentGroup: MutableState<String>,
-//    screenState: MutableState<String>
-//) {
+//🛠️ Suggested structure:
+//Button text state: initially "Repeat Groups"
+//On press: if the count hasn't been fetched yet, trigger the query (in a coroutine)
+//Idle background check: if you want it to preload, queue it with something like lifecycleScope.launch { delay(5_000); if (notFetched) fetch() }
 
+//🧠 Bonus ideas:
+//Cache the value in ViewModel, DB, or file with a timestamp → only refresh once a day.
+//While waiting: show loading spinner or Repeat Groups (...).
 
+//Let me know if you're in Compose, classic XML + ViewModel, or Jetpack + LiveData — I'll shape the idea accordingly.
+
+//// Helper to get cached count and last update date
+//fun getCachedRepeatCount(context: Context): Pair<Int?, Long?> {
+//    val prefs = context.getSharedPreferences("cache_prefs", Context.MODE_PRIVATE)
+//    val count = prefs.getInt("repeat_count", -1).takeIf { it >= 0 }
+//    val timestamp = prefs.getLong("repeat_count_timestamp", 0L).takeIf { it > 0 }
+//    return Pair(count, timestamp)
 //}
-
-
-//@Composable
-//fun GroupsScreen (
 //
-//    onBack: () -> Unit,
-//    onItemSelect: (String) -> Unit,
-//    names: SnapshotStateList<String>,
-//    modifier: Modifier = Modifier,
-//) {
-//    BackHandler {
-//        onBack()
-//    }
+//fun saveCachedRepeatCount(context: Context, count: Int) {
+//    val prefs = context.getSharedPreferences("cache_prefs", Context.MODE_PRIVATE)
+//    prefs.edit()
+//        .putInt("repeat_count", count)
+//        .putLong("repeat_count_timestamp", System.currentTimeMillis())
+//        .apply()
 //}
 //
-//@Composable
-//fun SubGroupsScreen (
-//    onBack: () -> Unit,
-//    onSubGroupSelect: (String) -> Unit,
-//    names: SnapshotStateList<String>,
-//    modifier: Modifier = Modifier,
-//) {
-//       Display_groups(onSubGroupSelect, names, modifier)
-//    BackHandler {
-//        onBack()
-//    }
-//}
+//// Usage in your button logic
+//val (cachedCount, cachedTime) = getCachedRepeatCount(context)
+//val oneDayMillis = 24 * 60 * 60 * 1000L
+//val isCacheValid = cachedTime != null && (System.currentTimeMillis() - cachedTime) < oneDayMillis
+//
+//val displayCount = if (isCacheValid && cachedCount != null) cachedCount else null
+//
+//button.text = if (displayCount != null) "Repeat Groups ($displayCount)" else "Repeat Groups"
+//
+//// On button click, if no valid cache, launch coroutine to fetch count, save to prefs, update button text
 
 @Preview
 @Composable
@@ -81,7 +87,7 @@ fun Display_groups(buttonFunction: (String) -> Unit = {},
                     .padding(5.dp)
                     .fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF1AE96A),
+                    containerColor = MyGreen,
                     contentColor = Color(0xFF555555),
                 ),
             ) {

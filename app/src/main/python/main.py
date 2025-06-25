@@ -595,16 +595,7 @@ class EnglishApp(Ui_UNOlingo, QMainWindow):
 				if column == 0:
 					obj.removeWidget(widget)  # Remove from layout
 					widget.deleteLater()  # Delete widget
-					
-					def clear_grid_column(self):
-						for i in reversed(range(self.groupGrid.count())):  # Iterate in reverse to avoid index shifting
-							item = self.groupGrid.itemAt(i)
-							if item is not None:
-								widget = item.widget()
-								_, column, _, _ = self.groupGrid.getItemPosition(i)  # Get the column position
-								if column == 0:
-									self.groupGrid.removeWidget(widget)  # Remove from layout
-									widget.deleteLater()
+
 	
 	def clear_mistakes(self):
 		for i in reversed(range(self.scrollGrid.count())):  # Iterate in reverse to avoid index shifting

@@ -13,3 +13,9 @@ val Pink40 = Color(0xFF7C11A8)
 val MyGreen = Color(0xFF4CE789)
 val MyRed = Color(0xFFF33A34)
 val MyBlue = Color(0xFF1AA3E1)
+
+// Colors of grades
+val GradeColorPerfect = Color(0xFFE8C40E)
+val GradeColorHigh    = Color(0xFF0A912E)
+val GradeColorMedium  = Color(0xFF177FCF)
+val GradeColorLow     = Color(0xFF512F9C)
