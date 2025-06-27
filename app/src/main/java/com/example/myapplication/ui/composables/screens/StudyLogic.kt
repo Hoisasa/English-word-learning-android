@@ -108,7 +108,7 @@ data class WordData(
     val word: String,
     val translation: String,
     val transcription: String? = null,
-    val weight: Float,
+    var weight: Float,
     val subgroup: String,
 )
 

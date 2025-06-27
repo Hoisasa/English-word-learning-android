@@ -130,6 +130,12 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
             }
             
             "ModeSelectScreen" -> {
+                // Words should not persist across different modes
+                lessonWords.clear()
+                restartRequested = true
+                isLoading = true
+                
+                
                 endOfLesson = false
                 ModeSelectScreen(
                     { chosenMode: String ->
@@ -145,7 +151,6 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
                 
                 BackHandler {
                     screenState = "ModeSelectScreen"
-                    restartRequested = true
                 }
                 
                 
@@ -153,9 +158,13 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
                     if (restartRequested) {
                         isLoading = true
                         Log.d("LoadingLesson", "load start")
-                        
-                        lessonWords.addAll(queryWords(context, currentSubGroup))
-                        lessonWords.shuffle()  // or according to studyMode
+                        if (lessonWords.size != 0) { //then its not the first time we entered the lesson
+                            updateWeightsOfLessonList(lessonWords, context, currentSubGroup)
+                            Log.d("LoadingLesson", "Weight update")
+                        } else {
+                            lessonWords.addAll(queryWords(context, currentSubGroup))
+                            Log.d("LoadingLesson", "full requery")
+                        }
                         lessonMistakes.clear()
                         endOfLesson = false // only here if it's a clean fresh start
                         restartRequested = false
@@ -262,6 +271,38 @@ fun queryWords(
     db.close()
     
     return result
+}
+
+fun updateWeightsOfLessonList(
+    lessonWords: MutableList<WordData>,
+    context: Context,
+    selectionArgs: String,
+) {
+    val path = context.getDatabasePath("dictionary.db").absolutePath
+    val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
+    
+    val start = System.currentTimeMillis()
+    
+    val query = "SELECT id, weight FROM words WHERE subgroup_name = ? ORDER BY weight"
+    val cursor = db.rawQuery(query, arrayOf(selectionArgs))
+    
+    while (cursor.moveToNext()) {
+        val id = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
+        val weight = cursor.getFloat(cursor.getColumnIndexOrThrow("weight"))
+        
+        for(word in lessonWords){
+            if (word.id == id) {
+                word.weight = weight
+            }
+        }
+    }
+    
+    val end = System.currentTimeMillis()
+    val elapsedMs = end - start
+    Log.d("Timing", "Query for words took $elapsedMs ms")
+    
+    cursor.close()
+    db.close()
 }
 
 data class GroupesWithProgressData(val name: String, val total: Int, val learned: Int)

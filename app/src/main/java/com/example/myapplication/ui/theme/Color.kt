@@ -20,6 +20,6 @@ val YellowWhite = Color(0xFFFFFADA)
 
 // Colors of grades
 val GradeColorPerfect = Color(0xFFE8C40E)
-val GradeColorHigh    = Color(0xFF0A912E)
+val GradeColorHigh    = Color(0xFF21B965)
 val GradeColorMedium  = Color(0xFF177FCF)
 val GradeColorLow     = Color(0xFF512F9C)
