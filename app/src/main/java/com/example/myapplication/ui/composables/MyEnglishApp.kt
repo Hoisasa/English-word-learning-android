@@ -6,6 +6,9 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -15,6 +18,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Devices
@@ -42,10 +46,12 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
     var currentGroup by remember { mutableStateOf("") }
     var currentSubGroup by remember { mutableStateOf("") }
     var studyMode by remember { mutableStateOf("") }
-    val groups = remember { mutableStateListOf<String>() }
-    val subgroups = remember { mutableStateListOf<String>() }
+    val groups = remember { mutableStateListOf<GroupesWithProgressData>() }
+    val subgroups = remember { mutableStateListOf<GroupesWithProgressData>() }
     var lessonWords = remember { mutableListOf<WordData>() }
     var grade by remember { mutableIntStateOf(0) }
+    var restartRequested by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(true) }
     var endOfLesson by remember { mutableStateOf(false) }
     var lessonMistakes = remember { mutableStateListOf<WordData>() }
     
@@ -65,11 +71,24 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
             
             "GroupsScreen" -> {
                 
+                val sql = """
+                    SELECT
+                        `groups`.name AS name,
+                        COUNT(words.id) AS total_words,
+                        SUM(CASE WHEN words.weight = 1.0 THEN 1 ELSE 0 END) AS learned_words
+                    FROM `groups`
+                    JOIN subgroups ON subgroups.group_id = `groups`.name
+                    JOIN words ON words.subgroup_name = subgroups.name
+                    GROUP BY `groups`.name
+                    ORDER BY `groups`.pos_name
+                """.trimIndent()
+                
+                
                 LaunchedEffect(Unit) {
                     groups.clear()
-                    groups.addAll(queryOverDict(context,"SELECT name FROM `groups`" ))
-                }
+                    groups.addAll(queryOverDict(context, sql))}
                 
+
                 Display_groups({ queryTarget: String ->
                     currentGroup = queryTarget
                     screenState = "SubGroupsScreen"
@@ -78,12 +97,24 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
             
             "SubGroupsScreen" -> {
                 
+                val sql =   """
+                            SELECT
+                                subgroups.name AS name,
+                                COUNT(words.id) AS total_words,
+                                SUM(CASE WHEN words.weight = 1.0 THEN 1 ELSE 0 END) AS learned_words
+                            FROM subgroups
+                            JOIN words ON words.subgroup_name = subgroups.name
+                            WHERE subgroups.group_id = ?
+                            GROUP BY subgroups.name
+                            """.trimIndent()
+                
+                
                 LaunchedEffect(currentGroup) {
                     subgroups.clear()
                     subgroups.addAll(
                         queryOverDict(
                             context,
-                            "SELECT * FROM subgroups WHERE group_id = ?",
+                            sql,
                             currentGroup,
                         )
                     )
@@ -110,50 +141,68 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
             }
             
             "LessonScreen" -> {
-                BackHandler { screenState = "ModeSelectScreen" }
+                Log.d("LoadingLesson", "We entered lesson screen")
                 
-                if (!endOfLesson) {
-                    lessonWords.clear()
-                    lessonWords.addAll(queryWords(context, currentSubGroup))
-                    StudyScreen(
-                        studyMode, lessonWords, lessonMistakes,
-                        { value: Boolean, MODE: String, receivedGrade: Int ->
-                            endOfLesson = value
-                            studyMode = MODE
-                            grade = receivedGrade
-                        },
-                        { context: Context ->
+                BackHandler {
+                    screenState = "ModeSelectScreen"
+                    restartRequested = true
+                }
+                
+                
+                LaunchedEffect(restartRequested) {
+                    if (restartRequested) {
+                        isLoading = true
+                        Log.d("LoadingLesson", "load start")
                         
-                        lessonWords.clear()
                         lessonWords.addAll(queryWords(context, currentSubGroup))
-                        screenState = "ModeSelectScreen"
-                        screenState = "LessonScreen"
-                        }
-                    )
+                        lessonWords.shuffle()  // or according to studyMode
+                        lessonMistakes.clear()
+                        endOfLesson = false // only here if it's a clean fresh start
+                        restartRequested = false
+                        isLoading = false
+                        Log.d("LoadingLesson", "load end")
+                    }
+                }
+                
+                if (isLoading) {
+                    Log.d("LoadingLesson", "We want list of words NOW")
                 } else {
-//                    SummaryScreen(modifier, 100, lessonMistakes)
-                    SummaryScreen(
-                        studyMode,
-                        grade,
-                        currentSubGroup,
-                        lessonMistakes,
-                        {
-                            lessonMistakes.clear()
-                            endOfLesson = false
-                        },
-                        {
-                            lessonMistakes.clear()
-                            screenState = "ModeSelectScreen"
-                        })
-                    
+                    if (!endOfLesson) {
+                        StudyScreen(
+                            studyMode, lessonWords, lessonMistakes,
+                            { value: Boolean, MODE: String, receivedGrade: Int ->
+                                endOfLesson = value
+                                studyMode = MODE
+                                grade = receivedGrade
+                            },
+                            {
+                                restartRequested = true
+                            }
+                        )
+                    } else {
+                        SummaryScreen(
+                            studyMode,
+                            grade,
+                            currentSubGroup,
+                            lessonMistakes,
+                            {
+                                lessonMistakes.clear()
+                                endOfLesson = false
+                            },
+                            {
+                                lessonMistakes.clear()
+                                screenState = "ModeSelectScreen"
+                            }
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-fun queryOverDict(context: Context, query: String, selectionArgs: String? = null): List<String> {
-    val result = mutableListOf<String>()
+fun queryOverDict(context: Context, query: String, selectionArgs: String? = null): List<GroupesWithProgressData> {
+    val result = mutableListOf<GroupesWithProgressData>()
     val path = context.getDatabasePath("dictionary.db").absolutePath
     val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
     val start = System.currentTimeMillis()
@@ -162,7 +211,12 @@ fun queryOverDict(context: Context, query: String, selectionArgs: String? = null
     val cursor = db.rawQuery(query, args)
     
     while (cursor.moveToNext()) {
-        result.add(cursor.getString(0))
+        val name = cursor.getString(cursor.getColumnIndexOrThrow("name"))
+        val total = cursor.getInt(cursor.getColumnIndexOrThrow("total_words"))
+        val learned = cursor.getInt(cursor.getColumnIndexOrThrow("learned_words"))
+        
+        val data = GroupesWithProgressData(name, total, learned)
+        result.add(data)
     }
     cursor.close()
     db.close()
@@ -209,3 +263,5 @@ fun queryWords(
     
     return result
 }
+
+data class GroupesWithProgressData(val name: String, val total: Int, val learned: Int)

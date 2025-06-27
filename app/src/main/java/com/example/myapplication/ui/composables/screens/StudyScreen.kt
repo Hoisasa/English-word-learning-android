@@ -29,8 +29,9 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import com.example.myapplication.ui.theme.MyGreen
+import com.example.myapplication.ui.theme.MyGreenText
 import com.example.myapplication.ui.theme.MyRed
-import com.example.myapplication.ui.theme.Pink40
+import com.example.myapplication.ui.theme.MyPurple
 
 @Composable
 fun StudyScreen(
@@ -38,7 +39,7 @@ fun StudyScreen(
     lessonWords: List<WordData>,
     lessonMistakes: SnapshotStateList<WordData>,
     endOfLesson: (Boolean, String, Int) -> Unit,
-    restart: (Context) -> Unit,
+    restart: () -> Unit,
 ) {
     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
         val (word, translation, transcription, points, correctAnswer, wrongAnswer, functionButton, audio, repeat) = createRefs()
@@ -181,7 +182,7 @@ fun StudyScreen(
                     .fillMaxHeight(0.08f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MyRed,
-                    contentColor = Color.White,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("No", style = TextStyle(fontSize = 30.sp))
@@ -201,8 +202,8 @@ fun StudyScreen(
                     .padding(top = 30.dp)
                     .fillMaxHeight(0.08f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Pink40,
-                    contentColor = Color.White,
+                    containerColor = MyPurple,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("Translate", style = TextStyle(fontSize = 30.sp))
@@ -224,7 +225,7 @@ fun StudyScreen(
                     .height(80.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent,
-                    contentColor = Color.White,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("🔉", style = TextStyle(fontSize = 30.sp))
@@ -232,9 +233,8 @@ fun StudyScreen(
             
             Button(
                 onClick = {
-                    lessonMistakes.clear()
-                    currentWordIndex = 0
-                    restart(context) },
+                    currentWordIndex = 0 // resets index in the native scope
+                    restart() }, // sets restartRequested to true
                 modifier = Modifier
                     .constrainAs(repeat) {
                         top.linkTo(topGuideLine)
@@ -246,7 +246,7 @@ fun StudyScreen(
                     .height(80.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent,
-                    contentColor = Color.White,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("🔁", style = TextStyle(fontSize = 30.sp))
@@ -268,8 +268,8 @@ fun StudyScreen(
                     .padding(top = 30.dp)
                     .fillMaxHeight(0.08f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Pink40,
-                    contentColor = Color.White,
+                    containerColor = MyPurple,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("Next Word", style = TextStyle(fontSize = 30.sp))
@@ -289,7 +289,7 @@ fun StudyScreen(
                     .height(80.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent,
-                    contentColor = Color.White,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("🔉", style = TextStyle(fontSize = 30.sp))
@@ -308,7 +308,7 @@ fun StudyScreen(
                     .height(80.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent,
-                    contentColor = Color.White,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("🔁", style = TextStyle(fontSize = 30.sp))
@@ -442,7 +442,7 @@ fun StudyScreenPreview() {
                     .fillMaxHeight(0.08f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MyRed,
-                    contentColor = Color.White,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("No", style = TextStyle(fontSize = 30.sp))
@@ -462,8 +462,8 @@ fun StudyScreenPreview() {
                     .padding(top = 30.dp)
                     .fillMaxHeight(0.08f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Pink40,
-                    contentColor = Color.White,
+                    containerColor = MyPurple,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("Translate", style = TextStyle(fontSize = 30.sp))
@@ -483,7 +483,7 @@ fun StudyScreenPreview() {
                     .height(80.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent,
-                    contentColor = Color.White,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("🔉", style = TextStyle(fontSize = 30.sp))
@@ -502,7 +502,7 @@ fun StudyScreenPreview() {
                     .height(80.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent,
-                    contentColor = Color.White,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("🔁", style = TextStyle(fontSize = 30.sp))
@@ -520,8 +520,8 @@ fun StudyScreenPreview() {
                     .padding(top = 30.dp)
                     .fillMaxHeight(0.08f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Pink40,
-                    contentColor = Color.White,
+                    containerColor = MyPurple,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("Translation", style = TextStyle(fontSize = 30.sp))
@@ -541,7 +541,7 @@ fun StudyScreenPreview() {
                     .height(80.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent,
-                    contentColor = Color.White,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("🔉", style = TextStyle(fontSize = 30.sp))
@@ -560,7 +560,7 @@ fun StudyScreenPreview() {
                     .height(80.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent,
-                    contentColor = Color.White,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text("🔁", style = TextStyle(fontSize = 30.sp))

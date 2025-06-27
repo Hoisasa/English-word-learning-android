@@ -7,10 +7,10 @@ import android.util.Log
 import kotlin.math.roundToInt
 
 private var activePlayer: MediaPlayer? = null
+const val MAX_POINTS = 5
 
 
 fun getMark(isCorrect: Boolean, isExam: String): Float {
-    val maxPoints = 5
     
     val multiplier: Int = when (isExam) {
         "Exam" -> 3
@@ -18,7 +18,7 @@ fun getMark(isCorrect: Boolean, isExam: String): Float {
     }
     
     val signed: Int = if (isCorrect) 1 else -1
-    val mark = signed.toFloat() / maxPoints * multiplier
+    val mark = signed.toFloat() / MAX_POINTS * multiplier
     return mark
 }
 
@@ -61,8 +61,7 @@ fun updateWeight(isCorrect: Boolean, isExam: String, wordId: Int, context: Conte
 
 
 fun showPoints(weight: Float): String {
-    val max_points = 5
-    return "⭐".repeat((weight * max_points).roundToInt())
+    return "⭐".repeat((weight * MAX_POINTS).roundToInt())
 }
 
 

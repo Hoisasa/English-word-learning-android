@@ -9,10 +9,14 @@ val Pink80 = Color(0xFF00FFC1)
 
 val Purple40 = Color(0xFF6650a4)
 val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7C11A8)
+val LightPurple = Color(0xFFF1EBFF)
+val MyPurple = Color(0xFF6546BB)
+val MyPurpleShadow = Color(0xFF2E156E)
 val MyGreen = Color(0xFF4CE789)
+val MyGreenText = Color(0xFF7EFF8F)
 val MyRed = Color(0xFFF33A34)
 val MyBlue = Color(0xFF1AA3E1)
+val YellowWhite = Color(0xFFFFFADA)
 
 // Colors of grades
 val GradeColorPerfect = Color(0xFFE8C40E)

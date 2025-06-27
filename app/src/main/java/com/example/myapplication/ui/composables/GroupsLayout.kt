@@ -1,25 +1,39 @@
 package com.example.myapplication.ui.composables
 
-import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.myapplication.ui.theme.MyGreen
+import com.example.myapplication.ui.theme.MyGreenText
+import com.example.myapplication.ui.theme.MyPurple
+import com.example.myapplication.ui.theme.MyPurpleShadow
 
 //Perfect use case for a lazy-loaded button with deferred logic. Here's how you can design it:
 
@@ -67,34 +81,95 @@ import com.example.myapplication.ui.theme.MyGreen
 //
 //// On button click, if no valid cache, launch coroutine to fetch count, save to prefs, update button text
 
-@Preview
 @Composable
-fun Display_groups(buttonFunction: (String) -> Unit = {},
-                   groupNames: SnapshotStateList<String> = mutableStateListOf("A", "B", "C", "D"),
-                   modifier: Modifier = Modifier
+fun Display_groups(
+    buttonFunction: (String) -> Unit = {},
+    groupNames: SnapshotStateList<GroupesWithProgressData>,
+    modifier: Modifier = Modifier
 ) {
-    
-    LazyColumn(modifier = Modifier
-        .fillMaxWidth()
+    Box(
+        modifier = Modifier
+            .fillMaxSize()               // fill the parent container
+            .wrapContentSize(Alignment.Center)  // center content inside Box
     ) {
-        items(groupNames) { name ->
-            Button(
-                onClick = {
-                            buttonFunction(name)
-                          },
-                shape = RoundedCornerShape(30.dp),
-                modifier = Modifier
-                    .padding(5.dp)
-                    .fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MyGreen,
-                    contentColor = Color(0xFF555555),
-                ),
-            ) {
-                Text(name)
+        LazyColumn(
+            modifier = Modifier
+                .wrapContentSize()       // make LazyColumn size to content, so it can be centered
+        ) {
+            items(groupNames) { group ->
+                
+                
+                // The Button fills max width
+                Button(
+                    onClick = { buttonFunction(group.name) },
+                    shape = RoundedCornerShape(40.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
+                        .shadow(6.dp, shape = RoundedCornerShape(40.dp)), // shadow with rounded corners
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MyPurple,
+                        contentColor = MyGreenText,
+                    )
+                ) {
+                    
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 10.dp, end = 12.dp)
+                                .align(Alignment.Center),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .shadow(6.dp, shape = CircleShape)
+                            ) {
+                                CircularProgressIndicator(
+                                    progress = { group.learned.toFloat() / group.total },
+                                    modifier = Modifier.fillMaxSize(),
+                                    strokeWidth = 13.dp,
+                                    strokeCap = StrokeCap.Round,
+                                    color = MyGreen
+                                )
+                            }
+
+                            
+                            Spacer(modifier = Modifier.width(12.dp))
+                            
+                            Text(
+                                text = "${group.learned}/${group.total}",
+                                modifier = Modifier.weight(1f),
+                                color = MyGreenText,
+                                style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
+                                    shadow = Shadow(
+                                        color = MyPurpleShadow,
+                                        offset = Offset(-6f, 6f),  // adjust for shadow position
+                                        blurRadius = 4f           // adjust for softness
+                                    )
+                                )
+                            )
+                            
+                            Text(
+                                text = group.name,
+                                modifier = Modifier.weight(10f).padding(top = 15.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis, // optional: show "…" if overflowed
+                                style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.SemiBold,
+                                    shadow = Shadow(
+                                        color = MyPurpleShadow,
+                                        offset = Offset(-6f, 6f),  // adjust for shadow position
+                                        blurRadius = 4f           // adjust for softness
+                                    )
+                                )
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
-
-
