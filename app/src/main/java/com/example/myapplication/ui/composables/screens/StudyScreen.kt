@@ -1,5 +1,6 @@
 package com.example.myapplication.ui.composables.screens
 
+import android.content.Context
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -9,10 +10,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,6 +38,7 @@ fun StudyScreen(
     lessonWords: List<WordData>,
     lessonMistakes: SnapshotStateList<WordData>,
     endOfLesson: (Boolean, String, Int) -> Unit,
+    restart: (Context) -> Unit,
 ) {
     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
         val (word, translation, transcription, points, correctAnswer, wrongAnswer, functionButton, audio, repeat) = createRefs()
@@ -47,12 +48,13 @@ fun StudyScreen(
         val endGuideLine = createGuidelineFromEnd(0.04f)
         val topTextGuideLine = createGuidelineFromTop(0.3f)
         val bottomTextGuideLine = createGuidelineFromTop(0.53f)
-        var currentSubGroup by remember { mutableIntStateOf(0) }
         var currentWordIndex by remember { mutableIntStateOf(0) }
         var isTranslatePressed by remember { mutableStateOf(false) }
         
         val context = LocalContext.current
+        val assetPath = buildAssetFilePath(lessonWords[currentWordIndex].subgroup, lessonWords[currentWordIndex].word)
 
+        
         Text(
             showPoints(lessonWords[currentWordIndex].weight),
             style = TextStyle(
@@ -67,6 +69,10 @@ fun StudyScreen(
                 }
                 .padding(bottom = 230.dp)
         )
+        
+        LaunchedEffect(assetPath) {
+            playOggFromAssets(context, assetPath)
+        }
         
         Text(
             lessonWords[currentWordIndex].word,
@@ -125,6 +131,7 @@ fun StudyScreen(
                 onClick = {
                     updateWeight(isCorrect = true, isExam = studyMode, lessonWords[currentWordIndex].id, context)
                     if (currentWordIndex < lessonWords.size - 1) {
+                        isTranslatePressed = false
                         currentWordIndex++
                     } else {
                         currentWordIndex = 0
@@ -155,6 +162,7 @@ fun StudyScreen(
                     updateWeight(isCorrect = false, isExam = studyMode, lessonWords[currentWordIndex].id, context)
                     lessonMistakes.add(lessonWords[currentWordIndex])
                     if (currentWordIndex < lessonWords.size - 1) {
+                        isTranslatePressed = false
                         currentWordIndex++
                     } else {
                         currentWordIndex = 0
@@ -202,7 +210,9 @@ fun StudyScreen(
             
             
             Button(
-                onClick = {},
+                onClick = {
+                    
+                    playOggFromAssets(context, assetPath) },
                 modifier = Modifier
                     .constrainAs(audio) {
                         top.linkTo(topGuideLine)
@@ -221,7 +231,10 @@ fun StudyScreen(
             }
             
             Button(
-                onClick = {},
+                onClick = {
+                    lessonMistakes.clear()
+                    currentWordIndex = 0
+                    restart(context) },
                 modifier = Modifier
                     .constrainAs(repeat) {
                         top.linkTo(topGuideLine)
@@ -283,7 +296,7 @@ fun StudyScreen(
             }
             
             Button(
-                onClick = {},
+                onClick = { currentWordIndex = 0 },
                 modifier = Modifier
                     .constrainAs(repeat) {
                         top.linkTo(topGuideLine)
@@ -328,7 +341,7 @@ fun StudyScreenPreview() {
         val bottomTextGuideLine = createGuidelineFromTop(0.53f)
         val studyMode by remember { mutableStateOf("Practice") }
         var isTranslatePressed by remember { mutableStateOf(false) }
-        var wordScore by remember { mutableStateOf("⭐⭐⭐⭐⭐") }
+        val wordScore by remember { mutableStateOf("⭐⭐⭐⭐⭐") }
         
         Text(
             wordScore,
@@ -380,7 +393,7 @@ fun StudyScreenPreview() {
                     })
             
             Text(
-                "[beginin]",
+                "[beginning]",
                 style = TextStyle(
                     fontSize = 30.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -511,7 +524,7 @@ fun StudyScreenPreview() {
                     contentColor = Color.White,
                 ),
             ) {
-                Text("Transaltion", style = TextStyle(fontSize = 30.sp))
+                Text("Translation", style = TextStyle(fontSize = 30.sp))
             }
             
             

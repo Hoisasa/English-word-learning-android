@@ -2,12 +2,12 @@ package com.example.myapplication.ui.composables.screens
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import android.media.MediaPlayer
 import android.util.Log
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import kotlin.math.roundToInt
+
+private var activePlayer: MediaPlayer? = null
+
 
 fun getMark(isCorrect: Boolean, isExam: String): Float {
     val maxPoints = 5
@@ -65,9 +65,43 @@ fun showPoints(weight: Float): String {
     return "⭐".repeat((weight * max_points).roundToInt())
 }
 
-//гордость скромность
+
 fun calculateGrade(mistakes: Int, size: Int): Int {
     return (((size - mistakes).toFloat() / size) * 100).roundToInt()
+}
+
+
+fun playOggFromAssets(context: Context, assetPath: String) {
+    try {
+        // Stop currently playing audio
+        activePlayer?.stop()
+        activePlayer?.release()
+        
+        // Set up new media player
+        val afd = context.assets.openFd(assetPath)
+        val mediaPlayer = MediaPlayer().apply {
+            setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+            prepare()
+            start()
+            setOnCompletionListener {
+                it.release()
+                if (activePlayer === it) activePlayer = null
+            }
+        }
+        
+        afd.close()
+        activePlayer = mediaPlayer
+        
+    } catch (e: Exception) {
+        Log.e("AudioPlay", "Error playing audio $assetPath", e)
+    }
+}
+
+
+fun buildAssetFilePath(subGroup: String, wordName: String): String {
+    val safeSubGroup = subGroup.replace("/", "-").replace(":", "-")
+    val safeWordName = wordName.split(" (")[0]
+    return "audiofiles/$safeSubGroup/$safeWordName.ogg"
 }
 
 data class WordData(

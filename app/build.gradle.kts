@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("com.chaquo.python")
     id("com.google.devtools.ksp")
 }
 
@@ -10,28 +9,28 @@ plugins {
 android {
     namespace = "com.example.myapplication"
     compileSdk = 35
-
+    
     defaultConfig {
         applicationId = "com.example.myapplication"
         minSdk = 30
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
+        
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
+        
         ndk {
             // On Apple silicon, you can omit x86_64.
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
     }
-
+    
     buildTypes {
-
+        
         debug {
             isDebuggable = true
         }
-        
+
 //        release {
 //            isMinifyEnabled = false
 //            proguardFiles(
@@ -40,7 +39,7 @@ android {
 //            )
 //        }
     }
-
+    
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -53,19 +52,7 @@ android {
     }
 }
 
-chaquopy {
-    defaultConfig {
-        version = "3.11"
-
-    }
-}
-
 dependencies {
-    val roomVersion = "2.7.2"
-    
-    implementation("androidx.room:room-runtime:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
-    ksp("androidx.room:room-compiler:$roomVersion")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -1,7 +1,7 @@
 package com.example.myapplication.ui.composables.screens
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import android.content.ContentValues
+import android.database.sqlite.SQLiteDatabase
 import androidx.compose.ui.graphics.Color
 import com.example.myapplication.ui.theme.GradeColorHigh
 import com.example.myapplication.ui.theme.GradeColorLow
@@ -16,3 +16,50 @@ fun getGradeColor(lessonScore: Int): Color {
         else -> GradeColorLow
     }
 }
+
+fun getGrades(db: SQLiteDatabase, subgroupName: String): List<Int> {
+    val grades = mutableListOf<Int>()
+    val cursor = db.rawQuery(
+        "SELECT grade FROM grades WHERE subgroup_name = ? ORDER BY epoch DESC",
+        arrayOf(subgroupName)
+    )
+    while (cursor.moveToNext()) {
+        grades.add(cursor.getInt(0))
+    }
+    cursor.close()
+    return grades
+}
+
+fun insertGrade(
+    db: SQLiteDatabase,
+    subgroupName: String,
+    grade: Int,
+    epoch: Long = System.currentTimeMillis()
+) {
+    val values = ContentValues().apply {
+        put("subgroup_name", subgroupName)
+        put("grade", grade)
+        put("epoch", epoch)
+    }
+    db.insert("grades", null, values)
+}
+
+fun cleanupOldGrades(db: SQLiteDatabase, subgroupName: String) {
+    val sql = """
+        DELETE FROM grades WHERE id NOT IN (
+            SELECT id FROM grades WHERE subgroup_name = ? ORDER BY epoch DESC LIMIT 4
+        ) AND subgroup_name = ?
+    """.trimIndent()
+    
+    db.execSQL(sql, arrayOf(subgroupName, subgroupName))
+}
+
+fun markExamCompleted(db: SQLiteDatabase, subgroupName: String) {
+    val stmt = db.compileStatement(
+        "UPDATE subgroups SET exam_completed_at = CURRENT_TIMESTAMP WHERE name = ?"
+    )
+    stmt.bindString(1, subgroupName)
+    stmt.executeUpdateDelete()
+    stmt.close()
+}
+

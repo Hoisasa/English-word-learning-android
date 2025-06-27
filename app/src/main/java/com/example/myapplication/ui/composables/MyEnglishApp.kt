@@ -1,5 +1,6 @@
 package com.example.myapplication.ui.composables
 
+import AudioDebugScreen
 import android.annotation.SuppressLint
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
@@ -24,8 +25,12 @@ import com.example.myapplication.ui.composables.screens.StudyScreen
 import com.example.myapplication.ui.composables.screens.SummaryScreen
 import com.example.myapplication.ui.composables.screens.WordData
 
+
+
+
 @SuppressLint("UnrememberedMutableState")
-@Preview(showBackground = true,
+@Preview(
+    showBackground = true,
     device = Devices.TABLET,
     widthDp = 857,
     heightDp = 1370
@@ -44,32 +49,27 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
     var endOfLesson by remember { mutableStateOf(false) }
     var lessonMistakes = remember { mutableStateListOf<WordData>() }
     
-    
     val currentList = when (screenState) {
         "GroupsScreen" -> groups
         "SubGroupsScreen" -> subgroups
         else -> mutableStateListOf()
     }
     
-    val handleSummaryExit: (Boolean) -> Unit = { value ->
-        lessonMistakes.clear()
-        endOfLesson = value
-    }
-    
-    
-    
+
     val context = LocalContext.current
     
     Surface(modifier) {
         when (screenState) {
             
+            "AudioDebugging" -> AudioDebugScreen()
+            
             "GroupsScreen" -> {
                 
                 LaunchedEffect(Unit) {
                     groups.clear()
-                    groups.addAll(queryOverDict("SELECT name FROM `groups`", null, context))
+                    groups.addAll(queryOverDict(context,"SELECT name FROM `groups`" ))
                 }
-
+                
                 Display_groups({ queryTarget: String ->
                     currentGroup = queryTarget
                     screenState = "SubGroupsScreen"
@@ -82,9 +82,9 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
                     subgroups.clear()
                     subgroups.addAll(
                         queryOverDict(
+                            context,
                             "SELECT * FROM subgroups WHERE group_id = ?",
                             currentGroup,
-                            context
                         )
                     )
                 }
@@ -101,8 +101,7 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
             "ModeSelectScreen" -> {
                 endOfLesson = false
                 ModeSelectScreen(
-                    {
-                        chosenMode: String ->
+                    { chosenMode: String ->
                         studyMode = chosenMode
                         screenState = "LessonScreen"
                     },
@@ -111,23 +110,37 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
             }
             
             "LessonScreen" -> {
+                BackHandler { screenState = "ModeSelectScreen" }
                 
                 if (!endOfLesson) {
                     lessonWords.clear()
                     lessonWords.addAll(queryWords(context, currentSubGroup))
-                    StudyScreen(studyMode, lessonWords, lessonMistakes,
-                        { value: Boolean, MODE: String, recievedGrade: Int ->
+                    StudyScreen(
+                        studyMode, lessonWords, lessonMistakes,
+                        { value: Boolean, MODE: String, receivedGrade: Int ->
                             endOfLesson = value
                             studyMode = MODE
-                            grade = recievedGrade
+                            grade = receivedGrade
                         },
+                        { context: Context ->
+                        
+                        lessonWords.clear()
+                        lessonWords.addAll(queryWords(context, currentSubGroup))
+                        screenState = "ModeSelectScreen"
+                        screenState = "LessonScreen"
+                        }
                     )
                 } else {
-                    BackHandler {
-                        handleSummaryExit
-                    }
 //                    SummaryScreen(modifier, 100, lessonMistakes)
-                    SummaryScreen(studyMode, grade, lessonMistakes, handleSummaryExit,
+                    SummaryScreen(
+                        studyMode,
+                        grade,
+                        currentSubGroup,
+                        lessonMistakes,
+                        {
+                            lessonMistakes.clear()
+                            endOfLesson = false
+                        },
                         {
                             lessonMistakes.clear()
                             screenState = "ModeSelectScreen"
@@ -139,7 +152,7 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
     }
 }
 
-fun queryOverDict(query: String, selectionArgs: String?, context: Context): List<String> {
+fun queryOverDict(context: Context, query: String, selectionArgs: String? = null): List<String> {
     val result = mutableListOf<String>()
     val path = context.getDatabasePath("dictionary.db").absolutePath
     val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
@@ -173,25 +186,26 @@ fun queryWords(
     
     val query = "SELECT * FROM words WHERE subgroup_name = ? ORDER BY weight"
     val cursor = db.rawQuery(query, arrayOf(selectionArgs))
-
+    
     while (cursor.moveToNext()) {
         val id = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
         val word = cursor.getString(cursor.getColumnIndexOrThrow("word")) ?: ""
         val translation = cursor.getString(cursor.getColumnIndexOrThrow("translation")) ?: ""
-        val transcription = cursor.getStringOrNull(cursor.getColumnIndexOrThrow("transcription")) // can be null
+        val transcription =
+            cursor.getStringOrNull(cursor.getColumnIndexOrThrow("transcription")) // can be null
         val weight = cursor.getFloat(cursor.getColumnIndexOrThrow("weight"))
         val subgroup = cursor.getString(cursor.getColumnIndexOrThrow("subgroup_name"))
         
         val wordData = WordData(id, word, translation, transcription, weight, subgroup)
         result.add(wordData)
     }
-
+    
     val end = System.currentTimeMillis()
     val elapsedMs = end - start
     Log.d("Timing", "Query for words took $elapsedMs ms")
-
+    
     cursor.close()
     db.close()
-
+    
     return result
 }
