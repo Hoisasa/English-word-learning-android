@@ -1,6 +1,9 @@
 package com.example.myapplication.ui.composables
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -30,10 +34,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.constraintlayout.compose.ConstraintLayout
+import com.example.myapplication.ui.composables.screens.GroupsWithProgressData
+import com.example.myapplication.ui.composables.screens.ScrollableTextWithArrow
 import com.example.myapplication.ui.theme.MyGreen
 import com.example.myapplication.ui.theme.MyGreenText
 import com.example.myapplication.ui.theme.MyPurple
 import com.example.myapplication.ui.theme.MyPurpleShadow
+import com.example.myapplication.ui.theme.groupsStyle
 
 //Perfect use case for a lazy-loaded button with deferred logic. Here's how you can design it:
 
@@ -84,92 +92,103 @@ import com.example.myapplication.ui.theme.MyPurpleShadow
 @Composable
 fun Display_groups(
     buttonFunction: (String) -> Unit = {},
-    groupNames: SnapshotStateList<GroupesWithProgressData>,
-    modifier: Modifier = Modifier
+    groupNames: SnapshotStateList<GroupsWithProgressData>,
+    modifier: Modifier = Modifier,
+    filter: Boolean = false
 ) {
-    Box(
+    ConstraintLayout(
         modifier = Modifier
             .fillMaxSize()               // fill the parent container
-            .wrapContentSize(Alignment.Center)  // center content inside Box
     ) {
+        val (buttons, filterVerb, filterNoun, filterAdjective, filterOther) = createRefs()
         LazyColumn(
             modifier = Modifier
-                .wrapContentSize()       // make LazyColumn size to content, so it can be centered
+                .constrainAs(buttons) {
+                    top.linkTo(parent.top)
+                    bottom.linkTo(parent.bottom)
+                }
         ) {
             items(groupNames) { group ->
                 
                 
-                // The Button fills max width
                 Button(
                     onClick = { buttonFunction(group.name) },
                     shape = RoundedCornerShape(40.dp),
-                    modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
-                        .shadow(6.dp, shape = RoundedCornerShape(40.dp)), // shadow with rounded corners
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 20.dp)
+                        .shadow(
+                            6.dp,
+                            shape = RoundedCornerShape(40.dp)
+                        ), // shadow with rounded corners
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MyPurple,
                         contentColor = MyGreenText,
                     )
                 ) {
                     
-                    Box(
+                    
+                    Row(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .fillMaxSize()
+                            .padding(end = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
+                        
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 10.dp, end = 12.dp)
-                                .align(Alignment.Center),
-                            verticalAlignment = Alignment.CenterVertically
+                                .size(48.dp)
+                                .shadow(6.dp, shape = CircleShape)
                         ) {
-                            
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .shadow(6.dp, shape = CircleShape)
-                            ) {
-                                CircularProgressIndicator(
-                                    progress = { group.learned.toFloat() / group.total },
-                                    modifier = Modifier.fillMaxSize(),
-                                    strokeWidth = 13.dp,
-                                    strokeCap = StrokeCap.Round,
-                                    color = MyGreen
-                                )
-                            }
-
-                            
-                            Spacer(modifier = Modifier.width(12.dp))
-                            
-                            Text(
-                                text = "${group.learned}/${group.total}",
-                                modifier = Modifier.weight(1f),
-                                color = MyGreenText,
-                                style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
-                                    shadow = Shadow(
-                                        color = MyPurpleShadow,
-                                        offset = Offset(-6f, 6f),  // adjust for shadow position
-                                        blurRadius = 4f           // adjust for softness
-                                    )
-                                )
-                            )
-                            
-                            Text(
-                                text = group.name,
-                                modifier = Modifier.weight(10f).padding(top = 15.dp),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis, // optional: show "…" if overflowed
-                                style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.SemiBold,
-                                    shadow = Shadow(
-                                        color = MyPurpleShadow,
-                                        offset = Offset(-6f, 6f),  // adjust for shadow position
-                                        blurRadius = 4f           // adjust for softness
-                                    )
-                                )
+                            CircularProgressIndicator(
+                                progress = { group.learned.toFloat() / group.total },
+                                modifier = Modifier.fillMaxSize(),
+                                strokeWidth = 13.dp,
+                                strokeCap = StrokeCap.Round,
+                                color = MyGreen
                             )
                         }
-                    }
+                        
+                        
+                        Spacer(modifier = Modifier.width(12.dp))
+                        
+                        Text(
+                            text = "${group.learned}/${group.total}",
+                            modifier = Modifier.weight(1f),
+                            color = MyGreenText,
+                            style = TextStyle(
+                                fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
+                                shadow = Shadow(
+                                    color = MyPurpleShadow,
+                                    offset = Offset(-6f, 6f),  // adjust for shadow position
+                                    blurRadius = 4f           // adjust for softness
+                                )
+                            )
+                        )
+                        
+                        
+                        
+                        ScrollableTextWithArrow(
+                            text = group.name,
+                            modifier = Modifier
+                                .weight(10f),
+                            style = groupsStyle
+                        )
+                        
+                        
+                    } //Button contents Row
+                    
                 }
             }
+        }
+        
+        if (filter) {
+            
+            Switch(checked = true, onCheckedChange = {
+            
+            })
+            
+            
         }
     }
 }

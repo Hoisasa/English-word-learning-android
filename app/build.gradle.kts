@@ -9,13 +9,14 @@ plugins {
 android {
     namespace = "com.example.myapplication"
     compileSdk = 35
+    buildToolsVersion = "34.0.0"
     
     defaultConfig {
         applicationId = "com.example.myapplication"
         minSdk = 30
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.1"
         
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
@@ -53,6 +54,7 @@ android {
 }
 
 dependencies {
+    implementation("com.google.code.gson:gson:2.10.1")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

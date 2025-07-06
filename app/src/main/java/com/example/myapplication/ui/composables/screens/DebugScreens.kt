@@ -73,37 +73,27 @@ fun folderNameFromGroup(group: String): String {
 
 // Data class to hold subgroup info
 data class SubgroupInfo(val name: String, val groupId: String, val wordCount: Int)
-//
-//fun ShuffleDebugScreen(words: List<WordData>, studyMode: String): List<WordData> {
-//    var processedWords = words.toMutableList()
-//
-//    if (studyMode == "Practice") {
-//        var it = 0
-//        while (it < processedWords.size && processedWords[it].weight != 1.0f) {
-//            it++
-//        }
-//
-//        if (it < processedWords.size - 1) {
-//            val subList = processedWords.subList(it, processedWords.size)
-//            val randomElement = subList.random()
-//
-//            // Remove and re-insert
-//            processedWords.remove(randomElement)
-//            processedWords.add(0, randomElement)
-//        }
-//    }
-//
-//    val size = processedWords.size
+
+fun MutableList<WordData>.reduceLearnedWordsTo1() {
+    Log.d("Shuffle", "Removing excess learned words")
+    Log.d("Shuffle", "Start: ${this.joinToString { it.word }}")
+    val filtered = this.filter { it.weight == 1f }
+    val processedWords = this.filter { it.weight < 0.999f}.toMutableList()
+    if (filtered.size > 0) {
+        val randomElement = filtered.random()
+        processedWords.add(0, randomElement)
+    }
+    Log.d("Shuffle", "End: ${processedWords.joinToString { it.word }}")
+    this.clear()
+    this.addAll(processedWords)
+}
+
+//fun smartShuffle(adjacentDupesValue:Int, words: List<WordData>): List<WordData> {
+//    val size = words.size
 //    val adjacentDupesValue = when {
 //        size >= 18 -> 3
 //        size >= 6 -> 2
 //        size >= 3 -> 1
 //        else -> 0
 //    }
-//
-//    return smartShuffle(adjacentDupesValue, processedWords)
-//}
-
-//fun smartShuffle(adjacentDupesValue:Int, words: List<WordData>): List<WordData> {
-//    val
 //}

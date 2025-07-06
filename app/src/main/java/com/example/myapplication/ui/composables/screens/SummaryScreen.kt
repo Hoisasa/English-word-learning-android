@@ -21,7 +21,9 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -32,16 +34,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import com.example.myapplication.ui.theme.MyBlue
+import com.example.myapplication.ui.theme.MyGreen
+import com.example.myapplication.ui.theme.MyGreenText
+import com.example.myapplication.ui.theme.MyPurple
+import com.example.myapplication.ui.theme.MyPurpleShadow
 import com.example.myapplication.ui.theme.MyRed
+import com.example.myapplication.ui.theme.PurpleGrey40
+import com.example.myapplication.ui.theme.summaryStyle
 
 @Composable
 fun SummaryScreen(
     studyMode: String,
-    lessonScore:Int,
+    lessonScore: Int,
     currentSubGroup: String,
     lessonMistakes: SnapshotStateList<WordData>,
-    restart: (Boolean) -> Unit,
+    restart: () -> Unit,
     quit: () -> Unit,
 ) {
     ConstraintLayout(
@@ -66,7 +73,12 @@ fun SummaryScreen(
             style = TextStyle(
                 fontSize = 200.sp,
                 fontWeight = FontWeight.Bold,
-                color = getGradeColor(lessonScore)
+                color = getGradeColor(lessonScore),
+                shadow = Shadow(
+                    color = MyPurpleShadow,
+                    offset = Offset(0f, -16f),  // adjust for shadow position
+                    blurRadius = 16f           // adjust for softness
+                )
             ),
             modifier = Modifier
                 .constrainAs(grade) {
@@ -78,7 +90,7 @@ fun SummaryScreen(
         insertGrade(db, currentSubGroup, lessonScore)
         val grades = getGrades(db, currentSubGroup)
         
-        LazyRow (
+        LazyRow(
             modifier = Modifier
                 .constrainAs(gradeMark) {
                     top.linkTo(grade.bottom)
@@ -87,14 +99,21 @@ fun SummaryScreen(
                 }
                 .padding(bottom = 20.dp),
             
-            ) { items(grades) { oldGrade ->
-                Text(oldGrade.toString(),
+            ) {
+            items(grades) { oldGrade ->
+                Text(
+                    oldGrade.toString(),
                     style = TextStyle(
                         fontSize = 50.sp,
                         fontWeight = FontWeight.Bold,
-                        color = getGradeColor(oldGrade)
+                        color = getGradeColor(oldGrade),
+                        shadow = Shadow(
+                            color = MyPurpleShadow,
+                            offset = Offset(0f, -8f),  // adjust for shadow position
+                            blurRadius = 8f           // adjust for softness
+                        )
                     ),
-                    modifier = Modifier.padding(start=15.dp, end = 15.dp)
+                    modifier = Modifier.padding(start = 15.dp, end = 15.dp)
                 )
             }
         }
@@ -111,35 +130,31 @@ fun SummaryScreen(
                     width = Dimension.fillToConstraints
                     height = Dimension.fillToConstraints
                 }
-                .clip(RoundedCornerShape(60.dp)),
+                .clip(RoundedCornerShape(60.dp))
+                .background(PurpleGrey40),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             items(
                 lessonMistakes
             ) { mistake ->
                 
-                Column( horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        mistake.word,
-                        style = TextStyle(
-                            fontSize = 50.sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    )
-                    Text(
-                        mistake.translation,
-                        style = TextStyle(
-                            fontSize = 50.sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    )
+                Column(
+                    modifier = Modifier.padding(start = 100.dp, end = 100.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally) {
+                    for (item in listOf(mistake.word, mistake.translation)) {
+                        ScrollableTextWithArrow(
+                            item,
+                            style = summaryStyle,
+                        )
+                    }
                 }
                 
                 HorizontalDivider(
                     thickness = 4.dp,
                     color = getGradeColor(lessonScore).copy(alpha = 0.5f),
                     modifier = Modifier
-                        .padding(start= 150.dp, end = 150.dp))
+                        .padding(start = 150.dp, end = 150.dp)
+                )
             }
         }
         
@@ -150,27 +165,36 @@ fun SummaryScreen(
                     top.linkTo(mistakes.top)
                     bottom.linkTo(bottomGuideLine)
                     start.linkTo(parent.start)
-                    height = Dimension.fillToConstraints
                     width = Dimension.value(135.dp)
+                    height = Dimension.fillToConstraints
                 }
-                .padding(10.dp),
+                .padding(10.dp)
+                .shadow(6.dp, shape = RoundedCornerShape(40.dp)), // shadow with rounded corners
             colors = ButtonDefaults.buttonColors(
-                containerColor = MyRed,
-                contentColor = Color.White,
+                containerColor = MyPurple,
+                contentColor = MyGreenText,
             ),
         ) {
             Text(
                 "Quit",
-                style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold),
                 modifier = Modifier.graphicsLayer {
                     rotationZ = -90f
-                })
+                },
+                style = TextStyle(
+                    fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                    shadow = Shadow(
+                        color = MyPurpleShadow,
+                        offset = Offset(-6f, 6f),  // adjust for shadow position
+                        blurRadius = 4f           // adjust for softness
+                    )
+                )
+            )
         }
         
         if (studyMode == "Practice") {
             
             Button(
-                onClick = { restart(false) },
+                onClick = { restart() },
                 modifier = Modifier
                     .constrainAs(repeat) {
                         top.linkTo(mistakes.top)
@@ -179,18 +203,24 @@ fun SummaryScreen(
                         width = Dimension.value(135.dp)
                         height = Dimension.fillToConstraints
                     }
-                    .padding(10.dp),
+                    .padding(10.dp)
+                    .shadow(6.dp, shape = RoundedCornerShape(40.dp)), // shadow with rounded corners
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MyBlue,
-                    contentColor = Color.White,
+                    containerColor = MyPurple,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text(
                     "🔁",
-                    style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold),
-                    modifier = Modifier.graphicsLayer {
-                        rotationZ = -90f
-                    })
+                    style = TextStyle(
+                        fontSize = 30.sp, fontWeight = FontWeight.Bold,
+                        shadow = Shadow(
+                            color = MyPurpleShadow,
+                            offset = Offset(3f, 6f),  // adjust for shadow position
+                            blurRadius = 4f           // adjust for softness
+                        )
+                    ),
+                )
             }
             
         } else {
@@ -198,8 +228,8 @@ fun SummaryScreen(
             
             Button(
                 onClick = {
-                    lessonMistakes.clear()
-                    restart(false) },
+                    restart()
+                },
                 modifier = Modifier
                     .constrainAs(repeat) {
                         top.linkTo(mistakes.top)
@@ -212,15 +242,23 @@ fun SummaryScreen(
                         width = Dimension.value(135.dp)
                         height = Dimension.fillToConstraints
                     }
-                    .padding(10.dp),
+                    .padding(10.dp)
+                    .shadow(6.dp, shape = RoundedCornerShape(40.dp)), // shadow with rounded corners
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MyBlue,
-                    contentColor = Color.White,
+                    containerColor = MyPurple,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text(
                     "🔁",
-                    style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                    style = TextStyle(
+                        fontSize = 30.sp, fontWeight = FontWeight.Bold,
+                        shadow = Shadow(
+                            color = MyPurpleShadow,
+                            offset = Offset(3f, 6f),  // adjust for shadow position
+                            blurRadius = 4f           // adjust for softness
+                        )
+                    )
                 )
             }
             
@@ -228,6 +266,7 @@ fun SummaryScreen(
                 Button(
                     onClick = {
                         markExamCompleted(db, currentSubGroup)
+                        quit()
                     },
                     modifier = Modifier
                         .constrainAs(save) {
@@ -238,15 +277,29 @@ fun SummaryScreen(
                             width = Dimension.value(135.dp)
                             
                         }
-                        .padding(10.dp),
+                        .padding(10.dp)
+                        .shadow(
+                            6.dp,
+                            shape = RoundedCornerShape(40.dp)
+                        ), // shadow with rounded corners
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MyBlue,
-                        contentColor = Color.White,
+                        containerColor = MyPurple,
+                        contentColor = MyGreenText,
                     ),
                 ) {
                     Text(
                         "Save",
-                        style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                        style = TextStyle(
+                            fontSize = 22.sp, fontWeight = FontWeight.Bold,
+                            shadow = Shadow(
+                                color = MyPurpleShadow,
+                                offset = Offset(-6f, 3f),  // adjust for shadow position
+                                blurRadius = 4f           // adjust for softness
+                            )
+                        ),
+                        modifier = Modifier.graphicsLayer {
+                            rotationZ = -90f
+                        }
                     )
                 }
             }
@@ -254,10 +307,11 @@ fun SummaryScreen(
     }
 }
 
-@Preview (
+@Preview(
     device = Devices.TABLET,
     widthDp = 857,
-    heightDp = 1370)
+    heightDp = 1370
+)
 
 @Composable
 fun SummaryScreenPreview() {
@@ -272,14 +326,19 @@ fun SummaryScreenPreview() {
         val bottomMistakesGuideLine = createGuidelineFromBottom(0.08f)
         val startGuideLine = createGuidelineFromStart(0.04f)
         val endGuideLine = createGuidelineFromEnd(0.04f)
-        val studyMode by remember { mutableStateOf("Practice") }
+        val studyMode by remember { mutableStateOf("Exam") }
         
         
-        Text (
+        Text(
             "100",
             style = TextStyle(
                 fontSize = 200.sp,
                 fontWeight = FontWeight.Bold,
+                shadow = Shadow(
+                    color = MyPurpleShadow,
+                    offset = Offset(0f, -16f),  // adjust for shadow position
+                    blurRadius = 16f           // adjust for softness
+                )
             ),
             modifier = Modifier
                 .constrainAs(grade) {
@@ -293,6 +352,11 @@ fun SummaryScreenPreview() {
             style = TextStyle(
                 fontSize = 80.sp,
                 fontWeight = FontWeight.Bold,
+                shadow = Shadow(
+                    color = MyPurpleShadow,
+                    offset = Offset(0f, -4f),  // adjust for shadow position
+                    blurRadius = 12f           // adjust for softness
+                )
             ),
             modifier = Modifier
                 .constrainAs(gradeMark) {
@@ -313,15 +377,23 @@ fun SummaryScreenPreview() {
                     height = Dimension.fillToConstraints
                 }
                 .clip(RoundedCornerShape(60.dp))
-                .background(Color.LightGray),
+                .background(PurpleGrey40),
             horizontalAlignment = Alignment.CenterHorizontally,
-            ) { items(listOf("beginning", "начало", "end", "конец")) {
-                name ->
-                Text(name,
+        ) {
+            items(listOf("beginning", "начало", "end", "конец")) { name ->
+                Text(
+                    name,
                     style = TextStyle(
                         fontSize = 50.sp,
                         fontWeight = FontWeight.Bold,
-                ),)
+                        color = MyPurpleShadow,
+                        shadow = Shadow(
+                            color = MyGreen,
+                            offset = Offset(-6f, -6f),  // adjust for shadow position
+                            blurRadius = 8f           // adjust for softness
+                        )
+                    ),
+                )
             }
         }
         
@@ -332,17 +404,26 @@ fun SummaryScreenPreview() {
                     top.linkTo(mistakes.top)
                     bottom.linkTo(bottomGuideLine)
                     start.linkTo(parent.start)
+                    width = Dimension.value(118.dp)
                     height = Dimension.fillToConstraints
-                    width = Dimension.value(135.dp)
                 }
-                .padding(10.dp),
+                .padding(10.dp)
+                .shadow(6.dp, shape = RoundedCornerShape(48.dp)), // shadow with rounded corners
             colors = ButtonDefaults.buttonColors(
                 containerColor = MyRed,
-                contentColor = Color.White,
+                contentColor = MyGreenText,
             ),
         ) {
-            Text("Back",
-                style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold),
+            Text(
+                "Back",
+                style = TextStyle(
+                    fontSize = 22.sp, fontWeight = FontWeight.Bold,
+                    shadow = Shadow(
+                        color = MyGreen,
+                        offset = Offset(-3f, -3f),  // adjust for shadow position
+                        blurRadius = 4f           // adjust for softness
+                    )
+                ),
                 modifier = Modifier.graphicsLayer {
                     rotationZ = -90f
                 })
@@ -356,21 +437,27 @@ fun SummaryScreenPreview() {
                         top.linkTo(mistakes.top)
                         bottom.linkTo(bottomGuideLine)
                         end.linkTo(parent.end)
-                        width = Dimension.value(135.dp)
+                        width = Dimension.value(118.dp)
                         height = Dimension.fillToConstraints
                     }
-                    .padding(10.dp),
-            colors = ButtonDefaults.buttonColors(
-                    containerColor = MyBlue,
-                    contentColor = Color.White,
+                    .padding(10.dp)
+                    .shadow(6.dp, shape = RoundedCornerShape(40.dp)), // shadow with rounded corners
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MyPurple,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text(
                     "🔁",
-                    style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold),
-                    modifier = Modifier.graphicsLayer {
-                        rotationZ = -90f
-                    })
+                    style = TextStyle(
+                        fontSize = 30.sp, fontWeight = FontWeight.Bold,
+                        shadow = Shadow(
+                            color = MyPurpleShadow,
+                            offset = Offset(3f, 6f),  // adjust for shadow position
+                            blurRadius = 4f           // adjust for softness
+                        )
+                    )
+                )
             }
         } else {
             
@@ -382,18 +469,27 @@ fun SummaryScreenPreview() {
                         bottom.linkTo(save.top)
                         end.linkTo(parent.end)
                         start.linkTo(save.start)
-                        width = Dimension.value(135.dp)
+                        width = Dimension.value(118.dp)
                         height = Dimension.fillToConstraints
                     }
-                    .padding(10.dp),
+                    .padding(10.dp)
+                    .shadow(6.dp, shape = RoundedCornerShape(40.dp)), // shadow with rounded corners
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MyBlue,
-                    contentColor = Color.White,
+                    containerColor = MyPurple,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text(
                     "🔁",
-                    style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold))
+                    style = TextStyle(
+                        fontSize = 30.sp, fontWeight = FontWeight.Bold,
+                        shadow = Shadow(
+                            color = MyPurpleShadow,
+                            offset = Offset(3f, 6f),  // adjust for shadow position
+                            blurRadius = 4f           // adjust for softness
+                        )
+                    )
+                )
             }
             
             Button(
@@ -404,18 +500,29 @@ fun SummaryScreenPreview() {
                         bottom.linkTo(bottomGuideLine)
                         end.linkTo(parent.end)
                         height = Dimension.fillToConstraints
-                        width = Dimension.value(135.dp)
+                        width = Dimension.value(118.dp)
                         
                     }
-                    .padding(10.dp),
+                    .padding(10.dp)
+                    .shadow(6.dp, shape = RoundedCornerShape(40.dp)), // shadow with rounded corners
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MyBlue,
-                    contentColor = Color.White,
+                    containerColor = MyPurple,
+                    contentColor = MyGreenText,
                 ),
             ) {
                 Text(
                     "Save",
-                    style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold))
+                    style = TextStyle(
+                        fontSize = 22.sp, fontWeight = FontWeight.Bold,
+                        shadow = Shadow(
+                            color = MyPurpleShadow,
+                            offset = Offset(-6f, 3f),  // adjust for shadow position
+                            blurRadius = 4f           // adjust for softness
+                        )
+                    ),
+                    modifier = Modifier.graphicsLayer {
+                        rotationZ = -90f
+                    })
             }
         }
     }

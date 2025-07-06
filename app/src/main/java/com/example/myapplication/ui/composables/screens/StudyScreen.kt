@@ -1,22 +1,26 @@
 package com.example.myapplication.ui.composables.screens
 
-import android.content.Context
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -30,27 +34,27 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import com.example.myapplication.ui.theme.MyGreen
 import com.example.myapplication.ui.theme.MyGreenText
-import com.example.myapplication.ui.theme.MyRed
 import com.example.myapplication.ui.theme.MyPurple
+import com.example.myapplication.ui.theme.MyRed
 
 @Composable
 fun StudyScreen(
     studyMode: String,
     lessonWords: List<WordData>,
     lessonMistakes: SnapshotStateList<WordData>,
-    endOfLesson: (Boolean, String, Int) -> Unit,
+    endOfLesson: (Int) -> Unit,
     restart: () -> Unit,
 ) {
     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-        val (word, translation, transcription, points, correctAnswer, wrongAnswer, functionButton, audio, repeat) = createRefs()
+        val (word, translation, transcription, points, correctAnswer, wrongAnswer, functionButton, audio, repeat, progressBar) = createRefs()
         val topGuideLine = createGuidelineFromTop(0.45f)
         val bottomGuideLine = createGuidelineFromBottom(0.25f)
         val startGuideLine = createGuidelineFromStart(0.04f)
         val endGuideLine = createGuidelineFromEnd(0.04f)
         val topTextGuideLine = createGuidelineFromTop(0.3f)
         val bottomTextGuideLine = createGuidelineFromTop(0.53f)
-        var currentWordIndex by remember { mutableIntStateOf(0) }
-        var isTranslatePressed by remember { mutableStateOf(false) }
+        var currentWordIndex by rememberSaveable { mutableIntStateOf(0) }
+        var isTranslatePressed by rememberSaveable { mutableStateOf(false) }
         
         val context = LocalContext.current
         val assetPath = buildAssetFilePath(lessonWords[currentWordIndex].subgroup, lessonWords[currentWordIndex].word)
@@ -71,8 +75,13 @@ fun StudyScreen(
                 .padding(bottom = 230.dp)
         )
         
-        LaunchedEffect(assetPath) {
-            playOggFromAssets(context, assetPath)
+        var lastPlayedIndex by rememberSaveable { mutableIntStateOf(-1) }
+        
+        LaunchedEffect(currentWordIndex) {
+            if (currentWordIndex != lastPlayedIndex) {
+                playOggFromAssets(context, assetPath)
+                lastPlayedIndex = currentWordIndex
+            }
         }
         
         Text(
@@ -136,7 +145,7 @@ fun StudyScreen(
                         currentWordIndex++
                     } else {
                         currentWordIndex = 0
-                        endOfLesson(true, studyMode, calculateGrade(lessonMistakes.size, lessonWords.size)
+                        endOfLesson(calculateGrade(lessonMistakes.size, lessonWords.size)
                         )
                     }
                 },
@@ -167,7 +176,7 @@ fun StudyScreen(
                         currentWordIndex++
                     } else {
                         currentWordIndex = 0
-                        endOfLesson(true, studyMode, calculateGrade(lessonMistakes.size, lessonWords.size))
+                        endOfLesson(calculateGrade(lessonMistakes.size, lessonWords.size))
                     }
                 },
                 modifier = Modifier
@@ -277,7 +286,7 @@ fun StudyScreen(
             
             
             Button(
-                onClick = {},
+                onClick = {playOggFromAssets(context, assetPath)},
                 modifier = Modifier
                     .constrainAs(audio) {
                         top.linkTo(topGuideLine)
@@ -314,7 +323,27 @@ fun StudyScreen(
                 Text("🔁", style = TextStyle(fontSize = 30.sp))
             }
         }
+        
+        Box(modifier = Modifier.fillMaxWidth().constrainAs(progressBar) {
+            bottom.linkTo(parent.bottom)
+            start.linkTo(startGuideLine)
+            end.linkTo(endGuideLine)
+        }.padding(50.dp),
+            contentAlignment = Alignment.BottomCenter) {
+            
+            LinearProgressIndicator(
+                progress = { currentWordIndex.toFloat() / lessonWords.size },
+                modifier = Modifier.fillMaxWidth().height(10.dp),
+                color = MyPurple,
+                trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                
+                )
+        }
+        
     }
+    
+
 }
 
 @Preview(
@@ -339,9 +368,9 @@ fun StudyScreenPreview() {
         val endGuideLine = createGuidelineFromEnd(0.04f)
         val topTextGuideLine = createGuidelineFromTop(0.3f)
         val bottomTextGuideLine = createGuidelineFromTop(0.53f)
-        val studyMode by remember { mutableStateOf("Practice") }
-        var isTranslatePressed by remember { mutableStateOf(false) }
-        val wordScore by remember { mutableStateOf("⭐⭐⭐⭐⭐") }
+        val studyMode by rememberSaveable { mutableStateOf("Practice") }
+        var isTranslatePressed by rememberSaveable { mutableStateOf(false) }
+        val wordScore by rememberSaveable { mutableStateOf("⭐⭐⭐⭐⭐") }
         
         Text(
             wordScore,

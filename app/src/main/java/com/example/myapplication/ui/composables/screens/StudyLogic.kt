@@ -3,8 +3,16 @@ package com.example.myapplication.ui.composables.screens
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.media.MediaPlayer
+import android.os.Build
 import android.util.Log
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlin.math.roundToInt
+
 
 private var activePlayer: MediaPlayer? = null
 const val MAX_POINTS = 5
@@ -29,8 +37,8 @@ fun updateQuery(wordId: Int, mark: Float, context: Context) {
         """
     UPDATE words
     SET weight = CASE
-        WHEN weight + ? > 1.0 THEN 1.0
-        WHEN weight + ? < 0.0 THEN 0.0
+        WHEN weight + ? > 0.9999 THEN 1.0
+        WHEN weight + ? < 0.0001 THEN 0.0
         ELSE weight + ?
     END
     WHERE id = ?
@@ -75,10 +83,13 @@ fun playOggFromAssets(context: Context, assetPath: String) {
         // Stop currently playing audio
         activePlayer?.stop()
         activePlayer?.release()
-        
+
         // Set up new media player
         val afd = context.assets.openFd(assetPath)
         val mediaPlayer = MediaPlayer().apply {
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//                attributionTag = "StudyScreenAudio"
+//            }
             setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
             prepare()
             start()
@@ -87,10 +98,10 @@ fun playOggFromAssets(context: Context, assetPath: String) {
                 if (activePlayer === it) activePlayer = null
             }
         }
-        
+
         afd.close()
         activePlayer = mediaPlayer
-        
+
     } catch (e: Exception) {
         Log.e("AudioPlay", "Error playing audio $assetPath", e)
     }
@@ -103,6 +114,8 @@ fun buildAssetFilePath(subGroup: String, wordName: String): String {
     return "audiofiles/$safeSubGroup/$safeWordName.ogg"
 }
 
+
+
 data class WordData(
     val id: Int,
     val word: String,
@@ -112,3 +125,10 @@ data class WordData(
     val subgroup: String,
 )
 
+val wordDataSaver = Saver<SnapshotStateList<WordData>, String>(
+    save = { list -> Gson().toJson(list) },
+    restore = { json ->
+        val type = object : TypeToken<List<WordData>>() {}.type
+        Gson().fromJson<List<WordData>>(json, type).toMutableStateList()
+    }
+)
