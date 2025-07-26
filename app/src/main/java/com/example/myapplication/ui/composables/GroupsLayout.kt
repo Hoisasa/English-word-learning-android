@@ -1,9 +1,9 @@
 package com.example.myapplication.ui.composables
 
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -19,29 +18,37 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.resolveDefaults
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import com.example.myapplication.ui.composables.screens.GroupsWithProgressData
 import com.example.myapplication.ui.composables.screens.ScrollableTextWithArrow
+import com.example.myapplication.ui.composables.screens.toggleFilter
 import com.example.myapplication.ui.theme.MyGreen
 import com.example.myapplication.ui.theme.MyGreenText
 import com.example.myapplication.ui.theme.MyPurple
 import com.example.myapplication.ui.theme.MyPurpleShadow
 import com.example.myapplication.ui.theme.groupsStyle
+import com.example.myapplication.ui.theme.summaryStyle
 
 //Perfect use case for a lazy-loaded button with deferred logic. Here's how you can design it:
 
@@ -91,25 +98,156 @@ import com.example.myapplication.ui.theme.groupsStyle
 
 @Composable
 fun Display_groups(
+    buttonReview: () -> Unit,
     buttonFunction: (String) -> Unit = {},
     groupNames: SnapshotStateList<GroupsWithProgressData>,
     modifier: Modifier = Modifier,
-    filter: Boolean = false
+    showFilter: Boolean = false,
+    allPOS: ArrayList<String> = arrayListOf("nothing")
 ) {
+
+
+    var filtersList by rememberSaveable { mutableStateOf(ArrayList<String>()) }
+    var selectedFiltersList by rememberSaveable { mutableStateOf(ArrayList<String>()) }
+    
+    LaunchedEffect(allPOS) {
+        if (filtersList.isEmpty()) {
+            filtersList = ArrayList(allPOS)
+            selectedFiltersList = ArrayList(allPOS)
+        }
+    }
+    
+    val filteredGroups = if(showFilter) groupNames.filter { it.pos in selectedFiltersList } else groupNames
+    
     ConstraintLayout(
         modifier = Modifier
             .fillMaxSize()               // fill the parent container
     ) {
-        val (buttons, filterVerb, filterNoun, filterAdjective, filterOther) = createRefs()
+        
+        val (buttons, filters) = createRefs()
+        val filtersGuideline = createGuidelineFromTop(0.80f)
+        
+        if (showFilter) {
+            Row(modifier = Modifier
+                .constrainAs(filters) {
+                    top.linkTo(filtersGuideline)
+                    bottom.linkTo(parent.bottom)
+                    height = Dimension.fillToConstraints
+                }
+                .padding(top = 40.dp)
+            ) {
+                filtersList.forEach { pos ->
+                    
+                    val isSelected = pos in selectedFiltersList
+                    val filterColor = if (isSelected) MyGreen else MyPurple
+                    Text(
+                        pos,
+                        color = filterColor,
+                        modifier = Modifier
+                            .padding(6.dp)
+                            .clickable {
+                                selectedFiltersList =
+                                    toggleFilter(pos, selectedFiltersList, filtersList)
+                            },
+                        fontSize = 40.sp
+                    )
+                }
+            }
+        }
+        
         LazyColumn(
             modifier = Modifier
                 .constrainAs(buttons) {
                     top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                }
+                    bottom.linkTo(filtersGuideline)
+                    height = Dimension.fillToConstraints
+                },
+            verticalArrangement = Arrangement.Center,
         ) {
-            items(groupNames) { group ->
+            
+            item {
+                Button(
+                    onClick = { buttonReview() },
+                    shape = RoundedCornerShape(40.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 20.dp)
+                        .shadow(
+                            6.dp,
+                            shape = RoundedCornerShape(40.dp)
+                        )
+                        .animateItem(),
+                    // shadow with rounded corners
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MyGreen,
+                        contentColor = MyGreenText,
+                    )
+                ) {
+                    
+                    
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(end = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                    
+//                        Box(
+//                            modifier = Modifier
+//                                .size(48.dp)
+//                                .shadow(6.dp, shape = CircleShape)
+//                        ) {
+//                            CircularProgressIndicator(
+//                                progress = { group.learned.toFloat() / group.total },
+//                                modifier = Modifier.fillMaxSize(),
+//                                strokeWidth = 13.dp,
+//                                strokeCap = StrokeCap.Round,
+//                                color = MyGreen
+//                            )
+//                        }
+//
+//
+//                        Spacer(modifier = Modifier.width(12.dp))
+//
+//                        Text(
+//                            text = "${group.learned}/${group.total}",
+//                            modifier = Modifier.weight(1f),
+//                            color = MyGreenText,
+//                            style = TextStyle(
+//                                fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
+//                                shadow = Shadow(
+//                                    color = MyPurpleShadow,
+//                                    offset = Offset(-6f, 6f),  // adjust for shadow position
+//                                    blurRadius = 4f           // adjust for softness
+//                                )
+//                            )
+//                        )
+                        
+                        
+                        
+                        ScrollableTextWithArrow(
+                            text = "Интервальное повторение",
+                            modifier = Modifier
+                                .weight(10f),
+                            style = summaryStyle.copy(fontSize = 24.sp)
+                        )
+                        
+                        
+                    } //Button contents Row
+                    
+                }
+            }
+            
+            
+            items(
+                items = filteredGroups,
+                key = { group -> group.name }
+            ) { group ->
                 
+                val borderColor = when (group.level) {
+                    1 -> MyGreen
+                    else -> Color.Transparent
+                }
                 
                 Button(
                     onClick = { buttonFunction(group.name) },
@@ -120,7 +258,14 @@ fun Display_groups(
                         .shadow(
                             6.dp,
                             shape = RoundedCornerShape(40.dp)
-                        ), // shadow with rounded corners
+                        )
+                        .border(
+                            width = 3.dp,
+                            color = borderColor,
+                            shape = RoundedCornerShape(40.dp)
+                        )
+                        .animateItem(),
+                    // shadow with rounded corners
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MyPurple,
                         contentColor = MyGreenText,
@@ -180,15 +325,6 @@ fun Display_groups(
                     
                 }
             }
-        }
-        
-        if (filter) {
-            
-            Switch(checked = true, onCheckedChange = {
-            
-            })
-            
-            
         }
     }
 }

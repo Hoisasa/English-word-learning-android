@@ -1,5 +1,6 @@
 package com.example.myapplication.ui.composables.screens
 
+import android.R
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.util.Log
@@ -35,7 +36,9 @@ fun ScrollableTextWithArrow(text: String, modifier: Modifier = Modifier, style: 
     Box( modifier = modifier) {
         Text(
             text = text,
-            modifier = Modifier.horizontalScroll(scrollState).padding(top = 15.dp, bottom = 10.dp),
+            modifier = Modifier
+                .horizontalScroll(scrollState)
+                .padding(top = 15.dp, bottom = 10.dp),
             style = style
         )
         
@@ -73,8 +76,10 @@ fun queryOverDict(context: Context, query: String, selectionArgs: String? = null
         val name = cursor.getString(cursor.getColumnIndexOrThrow("name"))
         val total = cursor.getInt(cursor.getColumnIndexOrThrow("total_words"))
         val learned = cursor.getInt(cursor.getColumnIndexOrThrow("learned_words"))
+        val pos = cursor.getString(cursor.getColumnIndexOrThrow("pos"))
+        val level = cursor.getInt(cursor.getColumnIndexOrThrow("level"))
         
-        val data = GroupsWithProgressData(name, total, learned)
+        val data = GroupsWithProgressData(name, total, learned, pos, level)
         result.add(data)
     }
     cursor.close()
@@ -155,7 +160,7 @@ fun updateWeightsOfLessonList(
     db.close()
 }
 
-data class GroupsWithProgressData(val name: String, val total: Int, var learned: Int) {
+data class GroupsWithProgressData(val name: String, val total: Int, var learned: Int, val pos: String, val level: Int) {
     fun updateLearnedCount(context: Context) {
         val path = context.getDatabasePath("dictionary.db").absolutePath
         val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
@@ -187,3 +192,32 @@ val groupSaver = Saver<GroupsWithProgressData?, String>(
     save = { group -> Gson().toJson(group) },
     restore = { json -> Gson().fromJson(json, GroupsWithProgressData::class.java) }
 )
+
+fun toggleFilter(pos: String, selectedItems: ArrayList<String>, allPOS: ArrayList<String>): ArrayList<String> {
+    val setOfChosenFilters = selectedItems.toSet()
+    val setOfAllFilters = allPOS.toSet()
+    
+    val newGroups = (if (setOfChosenFilters == setOfAllFilters) {
+        arrayListOf(pos)
+    } else if (pos in setOfChosenFilters) {
+        if (setOfChosenFilters == arrayListOf(pos).toSet()) {
+            setOfAllFilters
+        } else {
+            setOfChosenFilters - pos
+        }
+    } else {
+        setOfChosenFilters + pos
+    })
+    
+    return ArrayList(newGroups)
+}
+
+fun extendDB(context: Context) {
+    val path = context.getDatabasePath("dictionary.db").absolutePath
+    val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE)
+    
+    db.use {
+        it.execSQL("ALTER TABLE subgroups ADD COLUMN level INTEGER NOT NULL DEFAULT 0")
+        it.execSQL("UPDATE subgroups SET level = 1 WHERE exam_completed = 1")
+    }
+}

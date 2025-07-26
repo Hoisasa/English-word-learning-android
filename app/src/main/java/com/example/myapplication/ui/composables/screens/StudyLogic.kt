@@ -87,9 +87,6 @@ fun playOggFromAssets(context: Context, assetPath: String) {
         // Set up new media player
         val afd = context.assets.openFd(assetPath)
         val mediaPlayer = MediaPlayer().apply {
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//                attributionTag = "StudyScreenAudio"
-//            }
             setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
             prepare()
             start()

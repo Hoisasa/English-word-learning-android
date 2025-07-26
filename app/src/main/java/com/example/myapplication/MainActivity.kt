@@ -1,11 +1,13 @@
 package com.example.myapplication
 
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import com.example.myapplication.ui.composables.MyEnglishApp
 
 class MainActivity : ComponentActivity() {

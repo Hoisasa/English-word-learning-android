@@ -47,12 +47,12 @@ fun StudyScreen(
 ) {
     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
         val (word, translation, transcription, points, correctAnswer, wrongAnswer, functionButton, audio, repeat, progressBar) = createRefs()
-        val topGuideLine = createGuidelineFromTop(0.45f)
-        val bottomGuideLine = createGuidelineFromBottom(0.25f)
-        val startGuideLine = createGuidelineFromStart(0.04f)
-        val endGuideLine = createGuidelineFromEnd(0.04f)
-        val topTextGuideLine = createGuidelineFromTop(0.3f)
-        val bottomTextGuideLine = createGuidelineFromTop(0.53f)
+        val topGuideline = createGuidelineFromTop(0.45f)
+        val bottomGuideline = createGuidelineFromBottom(0.25f)
+        val startGuideline = createGuidelineFromStart(0.04f)
+        val endGuideline = createGuidelineFromEnd(0.04f)
+        val topTextGuideline = createGuidelineFromTop(0.3f)
+        val bottomTextGuideline = createGuidelineFromTop(0.53f)
         var currentWordIndex by rememberSaveable { mutableIntStateOf(0) }
         var isTranslatePressed by rememberSaveable { mutableStateOf(false) }
         
@@ -69,8 +69,8 @@ fun StudyScreen(
             modifier = Modifier
                 .constrainAs(points) {
                     bottom.linkTo(word.top)
-                    start.linkTo(startGuideLine)
-                    end.linkTo(endGuideLine)
+                    start.linkTo(startGuideline)
+                    end.linkTo(endGuideline)
                 }
                 .padding(bottom = 230.dp)
         )
@@ -92,10 +92,10 @@ fun StudyScreen(
             ),
             modifier = Modifier
                 .constrainAs(word) {
-                    top.linkTo(topTextGuideLine)
-                    bottom.linkTo(bottomTextGuideLine)
-                    start.linkTo(startGuideLine)
-                    end.linkTo(endGuideLine)
+                    top.linkTo(topTextGuideline)
+                    bottom.linkTo(bottomTextGuideline)
+                    start.linkTo(startGuideline)
+                    end.linkTo(endGuideline)
                 }
         )
         
@@ -114,7 +114,7 @@ fun StudyScreen(
                 modifier = Modifier
                     .constrainAs(translation) {
                         top.linkTo(word.bottom)
-                        bottom.linkTo(bottomTextGuideLine)
+                        bottom.linkTo(bottomTextGuideline)
                         start.linkTo(word.start)
                         end.linkTo(word.end)
                     }
@@ -128,7 +128,7 @@ fun StudyScreen(
                 ),
                 modifier = Modifier
                     .constrainAs(transcription) {
-                        top.linkTo(topTextGuideLine)
+                        top.linkTo(topTextGuideline)
                         bottom.linkTo(word.top)
                         start.linkTo(word.start)
                         end.linkTo(word.end)
@@ -153,7 +153,7 @@ fun StudyScreen(
                     .constrainAs(correctAnswer) {
                         top.linkTo(audio.bottom)
                         bottom.linkTo(functionButton.top)
-                        start.linkTo(startGuideLine)
+                        start.linkTo(startGuideline)
                         end.linkTo(wrongAnswer.start)
                         width = Dimension.fillToConstraints
                     }
@@ -184,7 +184,7 @@ fun StudyScreen(
                         top.linkTo(repeat.bottom)
                         bottom.linkTo(functionButton.top)
                         start.linkTo(correctAnswer.end)
-                        end.linkTo(endGuideLine)
+                        end.linkTo(endGuideline)
                         width = Dimension.fillToConstraints
                     }
                     .padding(start = 120.dp)
@@ -203,9 +203,9 @@ fun StudyScreen(
                 modifier = Modifier
                     .constrainAs(functionButton) {
                         top.linkTo(correctAnswer.bottom)
-                        bottom.linkTo(bottomGuideLine)
-                        start.linkTo(startGuideLine)
-                        end.linkTo(endGuideLine)
+                        bottom.linkTo(bottomGuideline)
+                        start.linkTo(startGuideline)
+                        end.linkTo(endGuideline)
                         width = Dimension.fillToConstraints
                     }
                     .padding(top = 30.dp)
@@ -225,9 +225,9 @@ fun StudyScreen(
                     playOggFromAssets(context, assetPath) },
                 modifier = Modifier
                     .constrainAs(audio) {
-                        top.linkTo(topGuideLine)
+                        top.linkTo(topGuideline)
                         bottom.linkTo(correctAnswer.top)
-                        start.linkTo(startGuideLine)
+                        start.linkTo(startGuideline)
                     }
                     .padding(start = 20.dp, bottom = 10.dp)
                     .width(80.dp)
@@ -246,9 +246,9 @@ fun StudyScreen(
                     restart() }, // sets restartRequested to true
                 modifier = Modifier
                     .constrainAs(repeat) {
-                        top.linkTo(topGuideLine)
+                        top.linkTo(topGuideline)
                         bottom.linkTo(wrongAnswer.top)
-                        end.linkTo(endGuideLine)
+                        end.linkTo(endGuideline)
                     }
                     .padding(end = 20.dp, bottom = 10.dp)
                     .width(80.dp)
@@ -270,8 +270,8 @@ fun StudyScreen(
                 modifier = Modifier
                     .constrainAs(functionButton) {
                         bottom.linkTo(functionButton.top)
-                        start.linkTo(startGuideLine)
-                        end.linkTo(endGuideLine)
+                        start.linkTo(startGuideline)
+                        end.linkTo(endGuideline)
                         width = Dimension.fillToConstraints
                     }
                     .padding(top = 30.dp)
@@ -289,9 +289,9 @@ fun StudyScreen(
                 onClick = {playOggFromAssets(context, assetPath)},
                 modifier = Modifier
                     .constrainAs(audio) {
-                        top.linkTo(topGuideLine)
+                        top.linkTo(topGuideline)
                         bottom.linkTo(functionButton.top)
-                        start.linkTo(startGuideLine)
+                        start.linkTo(startGuideline)
                     }
                     .padding(start = 20.dp, bottom = 10.dp)
                     .width(80.dp)
@@ -308,9 +308,9 @@ fun StudyScreen(
                 onClick = { currentWordIndex = 0 },
                 modifier = Modifier
                     .constrainAs(repeat) {
-                        top.linkTo(topGuideLine)
+                        top.linkTo(topGuideline)
                         bottom.linkTo(functionButton.top)
-                        end.linkTo(endGuideLine)
+                        end.linkTo(endGuideline)
                     }
                     .padding(end = 20.dp, bottom = 10.dp)
                     .width(80.dp)
@@ -326,8 +326,8 @@ fun StudyScreen(
         
         Box(modifier = Modifier.fillMaxWidth().constrainAs(progressBar) {
             bottom.linkTo(parent.bottom)
-            start.linkTo(startGuideLine)
-            end.linkTo(endGuideLine)
+            start.linkTo(startGuideline)
+            end.linkTo(endGuideline)
         }.padding(50.dp),
             contentAlignment = Alignment.BottomCenter) {
             

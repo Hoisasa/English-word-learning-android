@@ -56,7 +56,12 @@ fun cleanupOldGrades(db: SQLiteDatabase, subgroupName: String) {
 
 fun markExamCompleted(db: SQLiteDatabase, subgroupName: String) {
     val stmt = db.compileStatement(
-        "UPDATE subgroups SET exam_completed_at = CURRENT_TIMESTAMP WHERE name = ?"
+        """
+        UPDATE subgroups
+        SET exam_completed_at = CURRENT_TIMESTAMP,
+            level = level + 1
+        WHERE name = ?
+        """.trimIndent()
     )
     stmt.bindString(1, subgroupName)
     stmt.executeUpdateDelete()
