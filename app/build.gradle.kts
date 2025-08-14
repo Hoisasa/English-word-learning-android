@@ -7,16 +7,16 @@ plugins {
 
 
 android {
-    namespace = "com.example.myapplication"
+    namespace = "com.sharksempire.englishcards"
     compileSdk = 35
     buildToolsVersion = "34.0.0"
     
     defaultConfig {
-        applicationId = "com.example.myapplication"
+        applicationId = "com.sharksempire.englishcards"
         minSdk = 30
         targetSdk = 35
-        versionCode = 3
-        versionName = "pre1.1.2"
+        versionCode = 4
+        versionName = "1.1.2.1"
         
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
