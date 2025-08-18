@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import com.sharksempire.englishcards.ui.composables.screens.GroupsWithProgressData
+import com.sharksempire.englishcards.dao.GroupsWithProgressData
 import com.sharksempire.englishcards.ui.composables.screens.ScrollableTextWithArrow
 import com.sharksempire.englishcards.ui.composables.screens.toggleFilter
 import com.sharksempire.englishcards.ui.theme.MyGreen
@@ -242,10 +242,7 @@ fun Display_groups(
                 key = { group -> group.name }
             ) { group ->
                 
-                val borderColor = when (group.level) {
-                    1 -> MyGreen
-                    else -> Color.Transparent
-                }
+
                 
                 Button(
                     onClick = { buttonFunction(group.name) },
@@ -257,11 +254,7 @@ fun Display_groups(
                             6.dp,
                             shape = RoundedCornerShape(40.dp)
                         )
-                        .border(
-                            width = 3.dp,
-                            color = borderColor,
-                            shape = RoundedCornerShape(40.dp)
-                        )
+
                         .animateItem(),
                     // shadow with rounded corners
                     colors = ButtonDefaults.buttonColors(

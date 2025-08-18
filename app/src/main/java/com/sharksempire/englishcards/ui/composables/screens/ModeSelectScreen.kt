@@ -31,6 +31,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sharksempire.englishcards.dao.GroupsWithProgressData
 import com.sharksempire.englishcards.ui.theme.LightPurple
 import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyGreenText
@@ -114,18 +115,18 @@ fun ModeSelectScreen (
         }
     }
     
-    Box(modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(50.dp),
-        contentAlignment = Alignment.BottomCenter) {
-        val context = LocalContext.current
-        
-        LinearProgressIndicator(
-            progress = { thisSubGroup!!.updateLearnedCount(context)
-                thisSubGroup.learned.toFloat() / thisSubGroup.total },
-            modifier = Modifier.fillMaxWidth().height(10.dp),
-            color = MyPurple,
-            trackColor = ProgressIndicatorDefaults.linearTrackColor,
-            strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-            
-        )
-    }
+//    Box(modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(50.dp),
+//        contentAlignment = Alignment.BottomCenter) {
+//        val context = LocalContext.current
+//
+//        LinearProgressIndicator(
+//            progress = { thisSubGroup!!.updateLearnedCount(context)
+//                thisSubGroup.learned.toFloat() / thisSubGroup.total },
+//            modifier = Modifier.fillMaxWidth().height(10.dp),
+//            color = MyPurple,
+//            trackColor = ProgressIndicatorDefaults.linearTrackColor,
+//            strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+//
+//        )
+//    }
 }

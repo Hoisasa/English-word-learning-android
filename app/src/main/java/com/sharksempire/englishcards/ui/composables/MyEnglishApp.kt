@@ -4,7 +4,9 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -15,7 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
-import com.sharksempire.englishcards.ui.composables.screens.GroupsWithProgressData
+import androidx.room.Room
+import com.sharksempire.englishcards.AppDatabase
+import com.sharksempire.englishcards.dao.GroupsWithProgressData
 import com.sharksempire.englishcards.ui.composables.screens.extendDB
 import com.sharksempire.englishcards.ui.composables.screens.groupSaver
 import com.sharksempire.englishcards.ui.composables.screens.groupsSaver
@@ -78,81 +82,127 @@ sealed interface ScreenState {
     class SubGroup(group: String)
     object Repetition: ScreenState
 }
+//
+//class DictionaryRepository @Inject constructor(val dictionaryQueries: DictionaryQueries){
+//    fun queryOverDict(context: Context, query: String, selectionArgs: String? = null): List<GroupsWithProgressData> {
+//        val result = mutableListOf<GroupsWithProgressData>()
+//        val path = context.getDatabasePath("dictionary.db").absolutePath
+//        val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
+//        val start = System.currentTimeMillis()
+//
+//        val args = if (selectionArgs != null) arrayOf(selectionArgs) else selectionArgs
+//        val cursor = db.rawQuery(query, args)
+//
+//        while (cursor.moveToNext()) {
+//            val name = cursor.getString(cursor.getColumnIndexOrThrow("name"))
+//            val total = cursor.getInt(cursor.getColumnIndexOrThrow("total_words"))
+//            val learned = cursor.getInt(cursor.getColumnIndexOrThrow("learned_words"))
+//            val pos = cursor.getString(cursor.getColumnIndexOrThrow("pos"))
+//            val level = cursor.getInt(cursor.getColumnIndexOrThrow("level"))
+//
+//            val data = GroupsWithProgressData(name, total, learned, pos, level)
+//            result.add(data)
+//        }
+//        cursor.close()
+//        db.close()
+//
+//        val end = System.currentTimeMillis()  //wrap
+//        val elapsedMs = end - start
+//        Log.d("Timing", "Query for groups took $elapsedMs ms")
+//
+//        return result
+//    }
+//
+////    fun get
+//}
+//
+//
+//@HiltViewModel
+//class SelectionViewModel  : ViewModel() {
+//
+//}
 
-class DictionaryRepository @Inject constructor(val dictionaryQueries: DictionaryQueries){
-    fun queryOverDict(context: Context, query: String, selectionArgs: String? = null): List<GroupsWithProgressData> {
-        val result = mutableListOf<GroupsWithProgressData>()
-        val path = context.getDatabasePath("dictionary.db").absolutePath
-        val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
-        val start = System.currentTimeMillis()
-        
-        val args = if (selectionArgs != null) arrayOf(selectionArgs) else selectionArgs
-        val cursor = db.rawQuery(query, args)
-        
-        while (cursor.moveToNext()) {
-            val name = cursor.getString(cursor.getColumnIndexOrThrow("name"))
-            val total = cursor.getInt(cursor.getColumnIndexOrThrow("total_words"))
-            val learned = cursor.getInt(cursor.getColumnIndexOrThrow("learned_words"))
-            val pos = cursor.getString(cursor.getColumnIndexOrThrow("pos"))
-            val level = cursor.getInt(cursor.getColumnIndexOrThrow("level"))
-            
-            val data = GroupsWithProgressData(name, total, learned, pos, level)
-            result.add(data)
-        }
-        cursor.close()
-        db.close()
-        
-        val end = System.currentTimeMillis()  //wrap
-        val elapsedMs = end - start
-        Log.d("Timing", "Query for groups took $elapsedMs ms")
-        
-        return result
-    }
-    
-    fun get
-}
 
 
-@HiltViewModel
-class SelectionViewModel  : ViewModel() {
-
-}
-
-
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=1370dp,height=857dp,dpi=240",
-)
+//@Preview(
+//    showBackground = true,
+//    device = "spec:width=1370dp,height=857dp,dpi=240",
+//)
 @Composable
-fun MyEnglishApp(modifier: Modifier = Modifier) {
+fun MyEnglishApp(modifier: Modifier = Modifier)  {
     
     var screenState by rememberSaveable { mutableStateOf("GroupsScreen") }
     var currentGroup by rememberSaveable { mutableStateOf("") }
-    var currentSubGroup by rememberSaveable(stateSaver = groupSaver) { mutableStateOf<GroupsWithProgressData?>(null) }
+    var currentSubGroup by rememberSaveable(stateSaver = groupSaver) {
+        mutableStateOf<GroupsWithProgressData?>(
+            null
+        )
+    }
     var studyMode by rememberSaveable { mutableStateOf("") }
     val groups by rememberSaveable(stateSaver = groupsSaver) { mutableStateOf(mutableStateListOf()) }
-    val lessonWords by rememberSaveable(stateSaver = wordDataSaver) { mutableStateOf(mutableStateListOf()) }
+    val lessonWords by rememberSaveable(stateSaver = wordDataSaver) {
+        mutableStateOf(
+            mutableStateListOf()
+        )
+    }
     var grade by rememberSaveable { mutableIntStateOf(0) }
     var restartRequested by rememberSaveable { mutableStateOf(true) }
     var isLoading by rememberSaveable { mutableStateOf(true) }
     var endOfLesson by rememberSaveable { mutableStateOf(false) }
-    val lessonMistakes by rememberSaveable(stateSaver = wordDataSaver) { mutableStateOf(mutableStateListOf()) }
+    val lessonMistakes by rememberSaveable(stateSaver = wordDataSaver) {
+        mutableStateOf(
+            mutableStateListOf()
+        )
+    }
     var showFilter by rememberSaveable { mutableStateOf(true) }
     
     
     val context = LocalContext.current
+    val applicationContext = context.applicationContext
     
-    try {
-        extendDB(context)
-    } catch (e: Exception) {
-        //there will be exception dont doubt it
-    }
+    val db = Room.databaseBuilder(
+        applicationContext,
+        AppDatabase::class.java, "dictionary.db"
+    )
+        .allowMainThreadQueries()
+        .build()
+    
+    val groupsDao = db.groupsDao()
     
     Surface(modifier) {
-    
-    
-    
+        
+        when (screenState) {
+            
+            "GroupsScreen" -> {
+                val screenStateButton: (String) -> Unit
+                val selectionArgs: String?
+                selectionArgs = null
+                
+                
+                
+                LaunchedEffect(selectionArgs) {
+                    groups.clear()
+                    groups.addAll(groupsDao.queryGroupsWithProgressData())
+                }
+                
+                screenStateButton = {
+                    currentGroup = it
+                    screenState = "SubGroupsScreen"
+                }
+                
+                if (groups.isNotEmpty()) {
+                    if (groups.map {it.pos}.toSet().size > 1) {
+                        val allPOS = groups.map { it.pos }.toSet().toCollection(ArrayList())
+                        Display_groups({ screenState = "ReviewScreen" }, screenStateButton, groups, modifier, showFilter, allPOS)
+                    } else {
+                        Display_groups({ screenState = "ReviewScreen" }, screenStateButton, groups, modifier)
+                    }
+                }
+            }
+            
+            
+
+
 //        when (screenState) {
 //
 //            "AudioDebugging" -> AudioDebugScreen()
@@ -332,5 +382,6 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
 //                }
 //            }
 //        }
+        }
     }
 }

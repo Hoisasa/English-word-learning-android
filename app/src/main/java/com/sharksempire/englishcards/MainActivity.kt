@@ -25,6 +25,7 @@ class MainActivity : ComponentActivity() {
 
 fun copyDatabaseFromAssets(context: Context, dbName: String) {
     val dbPath = context.getDatabasePath(dbName)
+    dbPath.delete()
     if (!dbPath.exists()) {
         dbPath.parentFile?.mkdirs()
         context.assets.open("databases/$dbName").use { input ->

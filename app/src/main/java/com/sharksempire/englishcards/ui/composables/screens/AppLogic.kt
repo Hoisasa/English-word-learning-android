@@ -28,6 +28,7 @@ import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyPurpleShadow
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.sharksempire.englishcards.dao.GroupsWithProgressData
 
 @Composable
 fun ScrollableTextWithArrow(text: String, modifier: Modifier = Modifier, style: TextStyle) {
@@ -40,10 +41,10 @@ fun ScrollableTextWithArrow(text: String, modifier: Modifier = Modifier, style: 
                 .padding(top = 15.dp, bottom = 10.dp),
             style = style
         )
-        
+
         // The indicator of a text not fitting in the line
         // is int.MAX_VALUE on recomposition -> we cut that one out to avoid flickery
-        
+
         if (scrollState.maxValue != Int.MAX_VALUE && (scrollState.value + 10) < scrollState.maxValue) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
@@ -54,130 +55,115 @@ fun ScrollableTextWithArrow(text: String, modifier: Modifier = Modifier, style: 
                     .size(50.dp)
                     .padding(4.dp)
                     .clip(CircleShape)
-                    
+
                     .background(MyPurpleShadow.copy(alpha = 0.7f))
             )
         }
     }
 }
+//
+//
+//fun queryOverDict(context: Context, query: String, selectionArgs: String? = null): List<GroupsWithProgressData> {
+//    val result = mutableListOf<GroupsWithProgressData>()
+//    val path = context.getDatabasePath("dictionary.db").absolutePath
+//    val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
+//    val start = System.currentTimeMillis()
+//
+//    val args = if (selectionArgs != null) arrayOf(selectionArgs) else selectionArgs
+//    val cursor = db.rawQuery(query, args)
+//
+//    while (cursor.moveToNext()) {
+//        val name = cursor.getString(cursor.getColumnIndexOrThrow("name"))
+//        val total = cursor.getInt(cursor.getColumnIndexOrThrow("total_words"))
+//        val learned = cursor.getInt(cursor.getColumnIndexOrThrow("learned_words"))
+//        val pos = cursor.getString(cursor.getColumnIndexOrThrow("pos"))
+//        val level = cursor.getInt(cursor.getColumnIndexOrThrow("level"))
+//
+//        val data = GroupsWithProgressData(name, total, learned, pos)
+//        result.add(data)
+//    }
+//    cursor.close()
+//    db.close()
+//
+//    val end = System.currentTimeMillis()  //wrap
+//    val elapsedMs = end - start
+//    Log.d("Timing", "Query for groups took $elapsedMs ms")
+//    Log.d("CALLER", Log.getStackTraceString(Throwable()))
+//
+//    return result
+//}
+//
+//fun queryWords(
+//    context: Context,
+//    selectionArgs: String,
+//): List<WordData> {
+//    val result = mutableListOf<WordData>()
+//    val path = context.getDatabasePath("dictionary.db").absolutePath
+//    val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
+//
+//    val start = System.currentTimeMillis()
+//
+//    val query = "SELECT * FROM words WHERE subgroup_name = ? ORDER BY weight"
+//    val cursor = db.rawQuery(query, arrayOf(selectionArgs))
+//
+//    while (cursor.moveToNext()) {
+//        val id = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
+//        val word = cursor.getString(cursor.getColumnIndexOrThrow("word")) ?: ""
+//        val translation = cursor.getString(cursor.getColumnIndexOrThrow("translation")) ?: ""
+//        val transcription =
+//            cursor.getStringOrNull(cursor.getColumnIndexOrThrow("transcription")) // can be null
+//        val weight = cursor.getFloat(cursor.getColumnIndexOrThrow("weight"))
+//        val subgroup = cursor.getString(cursor.getColumnIndexOrThrow("subgroup_name"))
+//
+//        val wordData = WordData(id, word, translation, transcription, weight, subgroup)
+//        result.add(wordData)
+//    }
+//
+//    val end = System.currentTimeMillis()
+//    val elapsedMs = end - start
+//    Log.d("Timing", "Query for words took $elapsedMs ms")
+//    Log.d("CALLER", Log.getStackTraceString(Throwable()))
+//
+//    cursor.close()
+//    db.close()
+//
+//    return result
+//}
+//
+//fun updateWeightsOfLessonList(
+//    lessonWords: MutableList<WordData>,
+//    context: Context,
+//    selectionArgs: String,
+//) {
+//    val path = context.getDatabasePath("dictionary.db").absolutePath
+//    val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
+//
+//    val start = System.currentTimeMillis()
+//
+//    val query = "SELECT id, weight FROM words WHERE subgroup_name = ? ORDER BY id"
+//    val cursor = db.rawQuery(query, arrayOf(selectionArgs))
+//
+//    while (cursor.moveToNext()) {
+//        val id = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
+//        val weight = cursor.getFloat(cursor.getColumnIndexOrThrow("weight"))
+//
+//        for(word in lessonWords){
+//            if (word.id == id) {
+//                word.weight = weight
+//            }
+//        }
+//    }
+//
+//    val end = System.currentTimeMillis()
+//    val elapsedMs = end - start
+//    Log.d("Timing", "Query for words took $elapsedMs ms")
+//    Log.d("CALLER", Log.getStackTraceString(Throwable()))
+//
+//    cursor.close()
+//    db.close()
+//}
 
 
-fun queryOverDict(context: Context, query: String, selectionArgs: String? = null): List<GroupsWithProgressData> {
-    val result = mutableListOf<GroupsWithProgressData>()
-    val path = context.getDatabasePath("dictionary.db").absolutePath
-    val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
-    val start = System.currentTimeMillis()
-    
-    val args = if (selectionArgs != null) arrayOf(selectionArgs) else selectionArgs
-    val cursor = db.rawQuery(query, args)
-    
-    while (cursor.moveToNext()) {
-        val name = cursor.getString(cursor.getColumnIndexOrThrow("name"))
-        val total = cursor.getInt(cursor.getColumnIndexOrThrow("total_words"))
-        val learned = cursor.getInt(cursor.getColumnIndexOrThrow("learned_words"))
-        val pos = cursor.getString(cursor.getColumnIndexOrThrow("pos"))
-        val level = cursor.getInt(cursor.getColumnIndexOrThrow("level"))
-        
-        val data = GroupsWithProgressData(name, total, learned, pos, level)
-        result.add(data)
-    }
-    cursor.close()
-    db.close()
-    
-    val end = System.currentTimeMillis()  //wrap
-    val elapsedMs = end - start
-    Log.d("Timing", "Query for groups took $elapsedMs ms")
-    
-    return result
-}
-
-fun queryWords(
-    context: Context,
-    selectionArgs: String,
-): List<WordData> {
-    val result = mutableListOf<WordData>()
-    val path = context.getDatabasePath("dictionary.db").absolutePath
-    val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
-    
-    val start = System.currentTimeMillis()
-    
-    val query = "SELECT * FROM words WHERE subgroup_name = ? ORDER BY weight"
-    val cursor = db.rawQuery(query, arrayOf(selectionArgs))
-    
-    while (cursor.moveToNext()) {
-        val id = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
-        val word = cursor.getString(cursor.getColumnIndexOrThrow("word")) ?: ""
-        val translation = cursor.getString(cursor.getColumnIndexOrThrow("translation")) ?: ""
-        val transcription =
-            cursor.getStringOrNull(cursor.getColumnIndexOrThrow("transcription")) // can be null
-        val weight = cursor.getFloat(cursor.getColumnIndexOrThrow("weight"))
-        val subgroup = cursor.getString(cursor.getColumnIndexOrThrow("subgroup_name"))
-        
-        val wordData = WordData(id, word, translation, transcription, weight, subgroup)
-        result.add(wordData)
-    }
-    
-    val end = System.currentTimeMillis()
-    val elapsedMs = end - start
-    Log.d("Timing", "Query for words took $elapsedMs ms")
-    
-    cursor.close()
-    db.close()
-    
-    return result
-}
-
-fun updateWeightsOfLessonList(
-    lessonWords: MutableList<WordData>,
-    context: Context,
-    selectionArgs: String,
-) {
-    val path = context.getDatabasePath("dictionary.db").absolutePath
-    val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
-    
-    val start = System.currentTimeMillis()
-    
-    val query = "SELECT id, weight FROM words WHERE subgroup_name = ? ORDER BY id"
-    val cursor = db.rawQuery(query, arrayOf(selectionArgs))
-    
-    while (cursor.moveToNext()) {
-        val id = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
-        val weight = cursor.getFloat(cursor.getColumnIndexOrThrow("weight"))
-        
-        for(word in lessonWords){
-            if (word.id == id) {
-                word.weight = weight
-            }
-        }
-    }
-    
-    val end = System.currentTimeMillis()
-    val elapsedMs = end - start
-    Log.d("Timing", "Query for words took $elapsedMs ms")
-    
-    cursor.close()
-    db.close()
-}
-
-data class GroupsWithProgressData(val name: String, val total: Int, var learned: Int, val pos: String, val level: Int) {
-    fun updateLearnedCount(context: Context) {
-        val path = context.getDatabasePath("dictionary.db").absolutePath
-        val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
-        val cursor = db.rawQuery(
-            """
-        SELECT SUM(CASE WHEN words.weight = 1.0 THEN 1 ELSE 0 END)
-        FROM words
-        WHERE words.subgroup_name = ?
-        """.trimIndent(),
-            arrayOf(name)
-        )
-        cursor.use {
-            if (it.moveToFirst()) {
-                learned = it.getInt(0)
-            }
-        }
-    }
-}
 
 val groupsSaver = Saver<SnapshotStateList<GroupsWithProgressData>, String>(
     save = { list -> Gson().toJson(list) },
