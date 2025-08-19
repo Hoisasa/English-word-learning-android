@@ -5,6 +5,7 @@ import android.database.sqlite.SQLiteDatabase
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Query
+import com.sharksempire.englishcards.ui.composables.Item
 
 @Dao
 interface GroupsDao {
@@ -21,10 +22,42 @@ interface GroupsDao {
         GROUP BY main_groups.name
         ORDER BY learned_words DESC
         """)
-    fun queryGroupsWithProgressData(): List<GroupsWithProgressData>
-
-
+    fun queryGroupsWithProgressData(): List<Item.GroupsWithProgressData>
+    
+    @Query(
+        """
+        SELECT
+            subgroups.name AS name,
+            COUNT(words.id) AS total_words,
+            SUM(CASE WHEN words.weight = 1.0 THEN 1 ELSE 0 END) AS learned_words,
+            pos.name AS pos
+        FROM subgroups
+        JOIN main_groups ON subgroups.main_group_id = main_groups.name
+        JOIN pos ON main_groups.pos_name = pos.name
+        JOIN words ON words.subgroup_name = subgroups.name
+        WHERE subgroups.main_group_id = :main_group
+        GROUP BY subgroups.name, pos.name
+        """)
+    fun querySubgroupsWithProgressData(mainGroup: String): List<Item.GroupsWithProgressData>
+    
+    @Query(
+        """
+        SELECT
+            subgroups.name AS name,
+            COUNT(words.id) AS total_words,
+            SUM(CASE WHEN words.weight = 1.0 THEN 1 ELSE 0 END) AS learned_words,
+            pos.name AS pos
+        FROM subgroups
+        JOIN main_groups ON subgroups.main_group_id = main_groups.name
+        JOIN pos ON main_groups.pos_name = pos.name
+        JOIN words ON words.subgroup_name = subgroups.name
+        GROUP BY subgroups.name, pos.name
+        """
+    )
+    fun querySpacedRepetitionGroups(): List<Item.SpacedRepetitionWordsWithLevel>
 }
+
+
 
 data class GroupsWithProgressData(
     val name: String,
