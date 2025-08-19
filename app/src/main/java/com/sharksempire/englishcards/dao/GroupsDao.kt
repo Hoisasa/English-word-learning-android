@@ -35,7 +35,7 @@ interface GroupsDao {
         JOIN main_groups ON subgroups.main_group_id = main_groups.name
         JOIN pos ON main_groups.pos_name = pos.name
         JOIN words ON words.subgroup_name = subgroups.name
-        WHERE subgroups.main_group_id = :main_group
+        WHERE subgroups.main_group_id = :mainGroup
         GROUP BY subgroups.name, pos.name
         """)
     fun querySubgroupsWithProgressData(mainGroup: String): List<Item.GroupsWithProgressData>
@@ -44,8 +44,8 @@ interface GroupsDao {
         """
         SELECT
             subgroups.name AS name,
-            COUNT(words.id) AS total_words,
-            SUM(CASE WHEN words.weight = 1.0 THEN 1 ELSE 0 END) AS learned_words,
+            COUNT(words.id) AS level,
+            SUM(CASE WHEN words.weight = 1.0 THEN 1 ELSE 0 END) AS words_amount,
             pos.name AS pos
         FROM subgroups
         JOIN main_groups ON subgroups.main_group_id = main_groups.name
@@ -64,10 +64,9 @@ data class GroupsWithProgressData(
     @ColumnInfo(name = "total_words") val total: Int,
     @ColumnInfo(name = "learned_words") val learned: Int,
     val pos: String)
-    
-    
-    
-    
+
+
+
 //
 //
 //    fun updateLearnedCount(context: Context) {

@@ -5,6 +5,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import androidx.room.ColumnInfo
 import com.sharksempire.englishcards.dao.GroupsDao
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.Serializable
 import javax.inject.Inject
 
 //var screenState by rememberSaveable { mutableStateOf("GroupsScreen") }
@@ -95,52 +99,69 @@ class MainActivityViewModel @Inject constructor(private val repo: DictionaryRepo
     
     fun selectGroup(group: String) {
         _appState.update {
-            return@update it.copy {
-                screen = ScreenState.SubGroup
-            }
+            return@update it.copy (
+                screen = ScreenState.SubGroup,
+                content = repo.getSubgroups(group)
+            )
         }
     }
-    
 }
 
-
+@Serializable
+sealed interface Screen {
+    @Serializable
+    object Groups
+    @Serializable
+    object Mode
+    @Serializable
+    object Lesson
+    @Serializable
+    object Summary
+}
 
 @Composable
-fun MyEnglishApp(modifier: Modifier = Modifier)  {
+fun MyEnglishApp(modifier: Modifier = Modifier) {
     
 
     
+    val navController = rememberNavController()
+    
     Surface(modifier) {
-        
-        when (screenState) {
-            
-            "GroupsScreen" -> {
-                val screenStateButton: (String) -> Unit
-                val selectionArgs: String?
-                selectionArgs = null
-                
-                
-                
-                LaunchedEffect(selectionArgs) {
-                    groups.clear()
-                    groups.addAll(groupsDao.queryGroupsWithProgressData())
-                }
-                
-                screenStateButton = {
-                    currentGroup = it
-                    screenState = "SubGroupsScreen"
-                }
-                
-                if (groups.isNotEmpty()) {
-                    if (groups.map {it.pos}.toSet().size > 1) {
-                        val allPOS = groups.map { it.pos }.toSet().toCollection(ArrayList())
-                        Display_groups({ screenState = "ReviewScreen" }, screenStateButton, groups, modifier, showFilter, allPOS)
-                    } else {
-                        Display_groups({ screenState = "ReviewScreen" }, screenStateButton, groups, modifier)
-                    }
-                }
-            }
-            
+        NavHost(navController = navController, startDestination = Screen.Groups) {
+            composable<Screen.Groups> { Display_groups() }
+            composable<Screen.Mode> { }
+        }
+    }
+}
+//        when (screenState) {
+//
+//            "GroupsScreen" -> {
+//                val screenStateButton: (String) -> Unit
+//                val selectionArgs: String?
+//                selectionArgs = null
+//
+//
+//
+//                LaunchedEffect(selectionArgs) {
+//                    groups.clear()
+//                    groups.addAll(groupsDao.queryGroupsWithProgressData())
+//                }
+//
+//                screenStateButton = {
+//                    currentGroup = it
+//                    screenState = "SubGroupsScreen"
+//                }
+//
+//                if (groups.isNotEmpty()) {
+//                    if (groups.map {it.pos}.toSet().size > 1) {
+//                        val allPOS = groups.map { it.pos }.toSet().toCollection(ArrayList())
+//                        Display_groups({ screenState = "ReviewScreen" }, screenStateButton, groups, modifier, showFilter, allPOS)
+//                    } else {
+//                        Display_groups({ screenState = "ReviewScreen" }, screenStateButton, groups, modifier)
+//                    }
+//                }
+//            }
+//
             
 
 
@@ -323,6 +344,3 @@ fun MyEnglishApp(modifier: Modifier = Modifier)  {
 //                }
 //            }
 //        }
-        }
-    }
-}

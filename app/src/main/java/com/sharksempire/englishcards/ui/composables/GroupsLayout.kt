@@ -21,6 +21,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sharksempire.englishcards.dao.GroupsWithProgressData
 import com.sharksempire.englishcards.ui.composables.screens.ScrollableTextWithArrow
 import com.sharksempire.englishcards.ui.composables.screens.toggleFilter
@@ -47,6 +49,7 @@ import com.sharksempire.englishcards.ui.theme.MyGreenText
 import com.sharksempire.englishcards.ui.theme.MyPurple
 import com.sharksempire.englishcards.ui.theme.MyPurpleShadow
 import com.sharksempire.englishcards.ui.theme.groupsStyle
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 //Perfect use case for a lazy-loaded button with deferred logic. Here's how you can design it:
 
@@ -96,26 +99,23 @@ import com.sharksempire.englishcards.ui.theme.groupsStyle
 
 @Composable
 fun Display_groups(
-    buttonReview: () -> Unit,
+    buttonReview: () -> Unit = {},
     buttonFunction: (String) -> Unit = {},
-    groupNames: SnapshotStateList<GroupsWithProgressData>,
-    modifier: Modifier = Modifier,
-    showFilter: Boolean = false,
-    allPOS: ArrayList<String> = arrayListOf("nothing")
+    viewModel: MainActivityViewModel = hiltViewModel(),
 ) {
+    val state by viewModel.appState.collectAsState()
 
-
-    var filtersList by rememberSaveable { mutableStateOf(ArrayList<String>()) }
-    var selectedFiltersList by rememberSaveable { mutableStateOf(ArrayList<String>()) }
-    
-    LaunchedEffect(allPOS) {
-        if (filtersList.isEmpty()) {
-            filtersList = ArrayList(allPOS)
-            selectedFiltersList = ArrayList(allPOS)
-        }
-    }
-    
-    val filteredGroups = if(showFilter) groupNames.filter { it.pos in selectedFiltersList } else groupNames
+//    var filtersList by rememberSaveable { mutableStateOf(ArrayList<String>()) }
+//    var selectedFiltersList by rememberSaveable { mutableStateOf(ArrayList<String>()) }
+//
+//    LaunchedEffect(allPOS) {
+//        if (filtersList.isEmpty()) {
+//            filtersList = ArrayList(allPOS)
+//            selectedFiltersList = ArrayList(allPOS)
+//        }
+//    }
+//
+//    val filteredGroups = if(showFilter) groupNames.filter { it.pos in selectedFiltersList } else groupNames
     
     ConstraintLayout(
         modifier = Modifier
@@ -125,34 +125,34 @@ fun Display_groups(
         val (buttons, filters) = createRefs()
         val filtersGuideline = createGuidelineFromTop(0.80f)
         
-        if (showFilter) {
-            Row(modifier = Modifier
-                .constrainAs(filters) {
-                    top.linkTo(filtersGuideline)
-                    bottom.linkTo(parent.bottom)
-                    height = Dimension.fillToConstraints
-                }
-                .padding(top = 40.dp)
-            ) {
-                filtersList.forEach { pos ->
-                    
-                    val isSelected = pos in selectedFiltersList
-                    val filterColor = if (isSelected) MyGreen else MyPurple
-                    Text(
-                        pos,
-                        color = filterColor,
-                        modifier = Modifier
-                            .padding(6.dp)
-                            .clickable {
-                                selectedFiltersList =
-                                    toggleFilter(pos, selectedFiltersList, filtersList)
-                            },
-                        fontSize = 40.sp
-                    )
-                }
-            }
-        }
-        
+//        if (showFilter) {
+//            Row(modifier = Modifier
+//                .constrainAs(filters) {
+//                    top.linkTo(filtersGuideline)
+//                    bottom.linkTo(parent.bottom)
+//                    height = Dimension.fillToConstraints
+//                }
+//                .padding(top = 40.dp)
+//            ) {
+//                filtersList.forEach { pos ->
+//
+//                    val isSelected = pos in selectedFiltersList
+//                    val filterColor = if (isSelected) MyGreen else MyPurple
+//                    Text(
+//                        pos,
+//                        color = filterColor,
+//                        modifier = Modifier
+//                            .padding(6.dp)
+//                            .clickable {
+//                                selectedFiltersList =
+//                                    toggleFilter(pos, selectedFiltersList, filtersList)
+//                            },
+//                        fontSize = 40.sp
+//                    )
+//                }
+//            }
+//        }
+//
         LazyColumn(
             modifier = Modifier
                 .constrainAs(buttons) {
@@ -236,14 +236,11 @@ fun Display_groups(
 //                }
 //            }
             
-            
+            val groups = state.content.filterIsInstance<Item.GroupsWithProgressData>()
             items(
-                items = filteredGroups,
-                key = { group -> group.name }
+                items = groups,
+                key = { it.name }
             ) { group ->
-                
-
-                
                 Button(
                     onClick = { buttonFunction(group.name) },
                     shape = RoundedCornerShape(40.dp),
