@@ -1,20 +1,30 @@
 package com.sharksempire.englishcards.ui.composables
 
+import android.util.Log
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import androidx.room.ColumnInfo
+import androidx.room.util.copy
 import com.sharksempire.englishcards.dao.GroupsDao
+import com.sharksempire.englishcards.ui.composables.screens.Display_subgroups
+import com.sharksempire.englishcards.ui.composables.screens.ModeSelectScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
 
@@ -54,55 +64,128 @@ sealed interface ScreenState {
 }
 
 sealed interface Item {
+    val name: String
+    val pos: String
+    
     data class GroupsWithProgressData(
-        val name: String,
+        override val name: String,
         @ColumnInfo(name = "total_words") val total: Int,
         @ColumnInfo(name = "learned_words") val learned: Int,
-        val pos: String) : Item
+        override val pos: String
+    ) : Item
+    
     data class SpacedRepetitionWordsWithLevel(
         val level: Int,
-        val name: String,
+        override val name: String,
         val words_amount: Int,
-        val pos: String) : Item
+        override val pos: String
+    ) : Item
 }
 
-data class AppState(
-    val screen: ScreenState,
-    val content: List<Item>,
-    val currentTarget: String,
-)
 
+sealed interface CurrentTarget {
+    val showFilter: Boolean  // common property
+    
+    data class GroupTarget(
+        override val showFilter: Boolean = true
+    ): CurrentTarget
+    
+    data class SubGroupTarget(
+        val target: String,
+        override val showFilter: Boolean = false
+    ) : CurrentTarget
+    
+    data class RepetitionTarget(
+        override val showFilter: Boolean = true
+    ) : CurrentTarget
+}
+
+sealed interface QueryOperation<T> {
+    data class Success<T>(val data: T): QueryOperation<T>
+    data class Failure<T>(val exception: Exception): QueryOperation<T>
+    
+    fun onSuccess(block: (T) -> Unit): QueryOperation<T> {
+        if (this is Success) block(data)
+        return this
+    }
+    
+    fun onFailure(block: (Exception) -> Unit): QueryOperation<T> {
+        if (this is Failure) block(exception)
+        return this
+    }
+}
 
 class DictionaryRepository @Inject constructor(private val groupsDao: GroupsDao){
-    fun getGroups(): List<Item.GroupsWithProgressData> {
-        return groupsDao.queryGroupsWithProgressData()
+    fun getGroups(): QueryOperation<List<Item.GroupsWithProgressData>> {
+        return safeQueryCall {
+            groupsDao.queryGroupsWithProgressData()
+        }
     }
     
-    fun getSubgroups(mainGroup: String): List<Item.GroupsWithProgressData> {
-        return groupsDao.querySubgroupsWithProgressData(mainGroup)
+    fun getSubgroups(mainGroup: String): QueryOperation<List<Item.GroupsWithProgressData>> {
+        return safeQueryCall {
+            groupsDao.querySubgroupsWithProgressData(mainGroup)
+        }
     }
     
-    fun somethingelse(): List<Item.SpacedRepetitionWordsWithLevel> {
-        return groupsDao.querySpacedRepetitionGroups()
+    fun somethingelse(): QueryOperation<List<Item.SpacedRepetitionWordsWithLevel>> {
+        return safeQueryCall {
+            groupsDao.querySpacedRepetitionGroups()
+        }
+    }
+    
+    private inline fun <T> safeQueryCall(apiCall: () -> T): QueryOperation<T> {
+        return try {
+            QueryOperation.Success(data = apiCall())
+        } catch (e: Exception) {
+            QueryOperation.Failure(exception = e)
+        }
     }
 }
 
 
 @HiltViewModel
-class MainActivityViewModel @Inject constructor(private val repo: DictionaryRepository): ViewModel() {
-    private val _appState = MutableStateFlow(AppState(
-        screen = ScreenState.Group,
-        content = repo.getGroups(),
-        currentTarget = ""
-    ))
-    val appState: StateFlow<AppState> = _appState.asStateFlow()
+class MainActivityViewModel @Inject constructor(private val repo: DictionaryRepository) :
+    ViewModel() {
     
-    fun selectGroup(group: String) {
-        _appState.update {
-            return@update it.copy (
-                screen = ScreenState.SubGroup,
-                content = repo.getSubgroups(group)
-            )
+    private val _internalStorageFlow = MutableStateFlow<GroupsViewState>(
+        value = GroupsViewState.Loading
+    )
+    val uiState = _internalStorageFlow.asStateFlow()
+    
+    fun getGroups() = viewModelScope.launch{
+        _internalStorageFlow.update { return@update GroupsViewState.Loading }
+        repo.getGroups().onSuccess { groups ->
+            _internalStorageFlow.update {
+                return@update GroupsViewState.Success(
+                    showFilter = GroupsFilter.Main.showFilter,
+                    content = groups,
+                )
+            }
+        }.onFailure { exception ->
+            _internalStorageFlow.update {
+                return@update GroupsViewState.Error(
+                    message = exception.message ?: "Unknown error occurred"
+                )
+            }
+        }
+    }
+    
+    fun getSubgroups(target: String) = viewModelScope.launch{
+        _internalStorageFlow.update { return@update GroupsViewState.Loading }
+        repo.getSubgroups(target).onSuccess { groups ->
+            _internalStorageFlow.update {
+                return@update GroupsViewState.Success(
+                    showFilter = GroupsFilter.Sub.showFilter,
+                    content = groups,
+                )
+            }
+        }.onFailure { exception ->
+            _internalStorageFlow.update {
+                return@update GroupsViewState.Error(
+                    message = exception.message ?: "Unknown error occurred"
+                )
+            }
         }
     }
 }
@@ -111,6 +194,10 @@ class MainActivityViewModel @Inject constructor(private val repo: DictionaryRepo
 sealed interface Screen {
     @Serializable
     object Groups
+    @Serializable
+    data class SubGroups(val target: String)
+    @Serializable
+    data class Review(val target: String)
     @Serializable
     object Mode
     @Serializable
@@ -122,17 +209,42 @@ sealed interface Screen {
 @Composable
 fun MyEnglishApp(modifier: Modifier = Modifier) {
     
-
     
+    val viewModel: MainActivityViewModel = hiltViewModel()
     val navController = rememberNavController()
     
     Surface(modifier) {
         NavHost(navController = navController, startDestination = Screen.Groups) {
-            composable<Screen.Groups> { Display_groups() }
-            composable<Screen.Mode> { }
+            composable<Screen.Groups> {
+                Display_groups(
+                    { target ->
+                        navController.navigate(route = Screen.SubGroups(target = target))
+                    },
+//                { target ->
+//                    navController.navigate(route = Screen.Review(target = target))
+//                    }
+                )
+            }
+            composable<Screen.SubGroups> {
+                val arguments = it.toRoute<Screen.SubGroups>()
+                Display_subgroups(
+                    onSubgroupSelected = {
+                        navController.navigate(route = Screen.Mode)
+                    },
+                    target = arguments.target
+                )
+            }
+            composable<Screen.Mode> {
+                ModeSelectScreen(
+                    onModeChosen = { navController.navigate(route = Screen.Lesson) }
+                )
+            }
+            
+            
         }
     }
 }
+
 //        when (screenState) {
 //
 //            "GroupsScreen" -> {

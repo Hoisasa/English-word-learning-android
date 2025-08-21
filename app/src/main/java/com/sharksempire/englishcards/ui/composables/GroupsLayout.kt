@@ -1,5 +1,6 @@
 package com.sharksempire.englishcards.ui.composables
 
+import android.R.id.message
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -97,72 +98,95 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 //
 //// On button click, if no valid cache, launch coroutine to fetch count, save to prefs, update button text
 
+sealed class GroupsFilter(val showFilter: Boolean) {
+    object Main: GroupsFilter(true)
+    object Sub: GroupsFilter(false)
+    object Review: GroupsFilter(true)
+}
+
+sealed interface GroupsViewState {
+    object Loading : GroupsViewState
+    data class Error(val message: String) : GroupsViewState
+    data class Success(
+        val showFilter: Boolean,
+        val content: List<Item>
+    ) : GroupsViewState
+}
+
+
 @Composable
 fun Display_groups(
+    buttonFunction: (String) -> Unit,
     buttonReview: () -> Unit = {},
-    buttonFunction: (String) -> Unit = {},
     viewModel: MainActivityViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.appState.collectAsState()
-
-//    var filtersList by rememberSaveable { mutableStateOf(ArrayList<String>()) }
-//    var selectedFiltersList by rememberSaveable { mutableStateOf(ArrayList<String>()) }
-//
-//    LaunchedEffect(allPOS) {
-//        if (filtersList.isEmpty()) {
-//            filtersList = ArrayList(allPOS)
-//            selectedFiltersList = ArrayList(allPOS)
-//        }
-//    }
-//
-//    val filteredGroups = if(showFilter) groupNames.filter { it.pos in selectedFiltersList } else groupNames
+    LaunchedEffect(Unit, block = { viewModel.getGroups() })
+    val state by viewModel.uiState.collectAsState()
     
-    ConstraintLayout(
-        modifier = Modifier
-            .fillMaxSize()               // fill the parent container
-    ) {
-        
-        val (buttons, filters) = createRefs()
-        val filtersGuideline = createGuidelineFromTop(0.80f)
-        
-//        if (showFilter) {
-//            Row(modifier = Modifier
-//                .constrainAs(filters) {
-//                    top.linkTo(filtersGuideline)
-//                    bottom.linkTo(parent.bottom)
-//                    height = Dimension.fillToConstraints
-//                }
-//                .padding(top = 40.dp)
-//            ) {
-//                filtersList.forEach { pos ->
-//
-//                    val isSelected = pos in selectedFiltersList
-//                    val filterColor = if (isSelected) MyGreen else MyPurple
-//                    Text(
-//                        pos,
-//                        color = filterColor,
-//                        modifier = Modifier
-//                            .padding(6.dp)
-//                            .clickable {
-//                                selectedFiltersList =
-//                                    toggleFilter(pos, selectedFiltersList, filtersList)
-//                            },
-//                        fontSize = 40.sp
-//                    )
-//                }
-//            }
-//        }
-//
-        LazyColumn(
-            modifier = Modifier
-                .constrainAs(buttons) {
-                    top.linkTo(parent.top)
-                    bottom.linkTo(filtersGuideline)
-                    height = Dimension.fillToConstraints
-                },
-            verticalArrangement = Arrangement.Center,
-        ) {
+    when(val viewState = state) {
+        GroupsViewState.Loading -> CircularProgressIndicator(modifier = Modifier.size(50.dp))
+        is GroupsViewState.Error -> Text(text = viewState.message)
+        is GroupsViewState.Success -> {
+            val allPOS = viewState.content.map { it.pos }.toSet().toCollection(ArrayList())
             
+            var filtersList by rememberSaveable { mutableStateOf(ArrayList<String>()) }
+            var selectedFiltersList by rememberSaveable { mutableStateOf(ArrayList<String>()) }
+            
+            LaunchedEffect(allPOS) {
+                if (filtersList.isEmpty()) {
+                    filtersList = ArrayList(allPOS)
+                    selectedFiltersList = ArrayList(allPOS)
+                }
+            }
+            
+            val filteredGroups = if(viewState.showFilter) viewState.content.filter { it.pos in selectedFiltersList } else viewState.content
+            
+            ConstraintLayout(
+                modifier = Modifier
+                    .fillMaxSize()               // fill the parent container
+            ) {
+                
+                val (buttons, filters) = createRefs()
+                val filtersGuideline = createGuidelineFromTop(0.80f)
+
+                if (viewState.showFilter) {
+                    Row(modifier = Modifier
+                        .constrainAs(filters) {
+                            top.linkTo(filtersGuideline)
+                            bottom.linkTo(parent.bottom)
+                            height = Dimension.fillToConstraints
+                        }
+                        .padding(top = 40.dp)
+                    ) {
+                        filtersList.forEach { pos ->
+        
+                            val isSelected = pos in selectedFiltersList
+                            val filterColor = if (isSelected) MyGreen else MyPurple
+                            Text(
+                                pos,
+                                color = filterColor,
+                                modifier = Modifier
+                                    .padding(6.dp)
+                                    .clickable {
+                                        selectedFiltersList =
+                                            toggleFilter(pos, selectedFiltersList, filtersList)
+                                    },
+                                fontSize = 40.sp
+                            )
+                        }
+                    }
+                }
+
+                LazyColumn(
+                    modifier = Modifier
+                        .constrainAs(buttons) {
+                            top.linkTo(parent.top)
+                            bottom.linkTo(filtersGuideline)
+                            height = Dimension.fillToConstraints
+                        },
+                    verticalArrangement = Arrangement.Center,
+                ) {
+
 //            item {
 //                Button(
 //                    onClick = { buttonReview() },
@@ -235,82 +259,76 @@ fun Display_groups(
 //
 //                }
 //            }
-            
-            val groups = state.content.filterIsInstance<Item.GroupsWithProgressData>()
-            items(
-                items = groups,
-                key = { it.name }
-            ) { group ->
-                Button(
-                    onClick = { buttonFunction(group.name) },
-                    shape = RoundedCornerShape(40.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 20.dp)
-                        .shadow(
-                            6.dp,
-                            shape = RoundedCornerShape(40.dp)
-                        )
-
-                        .animateItem(),
-                    // shadow with rounded corners
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MyPurple,
-                        contentColor = MyGreenText,
-                    )
-                ) {
                     
-                    
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(end = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        
-                        Box(
+                    val groups = filteredGroups.filterIsInstance<Item.GroupsWithProgressData>()
+                    items(
+                        items = groups,
+                        key = { it.name }
+                    ) { group ->
+                        Button(
+                            onClick = {
+                                buttonFunction(group.name)
+                            },
+                            shape = RoundedCornerShape(40.dp),
                             modifier = Modifier
-                                .size(48.dp)
-                                .shadow(6.dp, shape = CircleShape)
-                        ) {
-                            CircularProgressIndicator(
-                                progress = { group.learned.toFloat() / group.total },
-                                modifier = Modifier.fillMaxSize(),
-                                strokeWidth = 13.dp,
-                                strokeCap = StrokeCap.Round,
-                                color = MyGreen
-                            )
-                        }
-                        
-                        
-                        Spacer(modifier = Modifier.width(12.dp))
-                        
-                        Text(
-                            text = "${group.learned}/${group.total}",
-                            modifier = Modifier.weight(1f),
-                            color = MyGreenText,
-                            style = TextStyle(
-                                fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
-                                shadow = Shadow(
-                                    color = MyPurpleShadow,
-                                    offset = Offset(-6f, 6f),  // adjust for shadow position
-                                    blurRadius = 4f           // adjust for softness
+                                .fillMaxWidth()
+                                .padding(top = 20.dp)
+                                .shadow(
+                                    6.dp,
+                                    shape = RoundedCornerShape(40.dp)
                                 )
+                                .animateItem(),
+                            // shadow with rounded corners
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MyPurple,
+                                contentColor = MyGreenText,
                             )
-                        )
-                        
-                        
-                        
-                        ScrollableTextWithArrow(
-                            text = group.name,
-                            modifier = Modifier
-                                .weight(10f),
-                            style = groupsStyle
-                        )
-                        
-                        
-                    } //Button contents Row
-                    
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(end = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .shadow(6.dp, shape = CircleShape)
+                                ) {
+                                    CircularProgressIndicator(
+                                        progress = { group.learned.toFloat() / group.total },
+                                        modifier = Modifier.fillMaxSize(),
+                                        strokeWidth = 13.dp,
+                                        strokeCap = StrokeCap.Round,
+                                        color = MyGreen
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.width(12.dp))
+                                
+                                Text(
+                                    text = "${group.learned}/${group.total}",
+                                    modifier = Modifier.weight(1f),
+                                    color = MyGreenText,
+                                    style = TextStyle(
+                                        fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
+                                        shadow = Shadow(
+                                            color = MyPurpleShadow,
+                                            offset = Offset(-6f, 6f),  // adjust for shadow position
+                                            blurRadius = 4f           // adjust for softness
+                                        )
+                                    )
+                                )
+                                
+                                ScrollableTextWithArrow(
+                                    text = group.name,
+                                    modifier = Modifier
+                                        .weight(10f),
+                                    style = groupsStyle
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
