@@ -1,23 +1,17 @@
 package com.sharksempire.englishcards.ui.composables
 
-import android.R.id.message
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,30 +21,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.sharksempire.englishcards.dao.GroupsWithProgressData
-import com.sharksempire.englishcards.ui.composables.screens.ScrollableTextWithArrow
+import com.sharksempire.englishcards.components.groups.GroupButtonWithProgress
+import com.sharksempire.englishcards.components.groups.GroupsFilterItem
 import com.sharksempire.englishcards.ui.composables.screens.toggleFilter
 import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyGreenText
 import com.sharksempire.englishcards.ui.theme.MyPurple
 import com.sharksempire.englishcards.ui.theme.MyPurpleShadow
-import com.sharksempire.englishcards.ui.theme.groupsStyle
-import dagger.hilt.android.lifecycle.HiltViewModel
 
 //Perfect use case for a lazy-loaded button with deferred logic. Here's how you can design it:
 
@@ -116,8 +100,8 @@ sealed interface GroupsViewState {
 
 @Composable
 fun Display_groups(
-    buttonFunction: (String) -> Unit,
-    buttonReview: () -> Unit = {},
+    onGroupSelected: (String) -> Unit,
+    onReviewSelected: () -> Unit = {},
     viewModel: MainActivityViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(Unit, block = { viewModel.getGroups() })
@@ -127,55 +111,37 @@ fun Display_groups(
         GroupsViewState.Loading -> CircularProgressIndicator(modifier = Modifier.size(50.dp))
         is GroupsViewState.Error -> Text(text = viewState.message)
         is GroupsViewState.Success -> {
-            val allPOS = viewState.content.map { it.pos }.toSet().toCollection(ArrayList())
-            
-            var filtersList by rememberSaveable { mutableStateOf(ArrayList<String>()) }
-            var selectedFiltersList by rememberSaveable { mutableStateOf(ArrayList<String>()) }
-            
-            LaunchedEffect(allPOS) {
-                if (filtersList.isEmpty()) {
-                    filtersList = ArrayList(allPOS)
-                    selectedFiltersList = ArrayList(allPOS)
-                }
-            }
-            
-            val filteredGroups = if(viewState.showFilter) viewState.content.filter { it.pos in selectedFiltersList } else viewState.content
-            
             ConstraintLayout(
-                modifier = Modifier
-                    .fillMaxSize()               // fill the parent container
+                modifier = Modifier.fillMaxSize()
             ) {
+                val (buttons, filters, guidelineLine) = createRefs()
+                val filtersGuideline = createGuidelineFromTop(0.9f)
                 
-                val (buttons, filters) = createRefs()
-                val filtersGuideline = createGuidelineFromTop(0.80f)
-
-                if (viewState.showFilter) {
-                    Row(modifier = Modifier
-                        .constrainAs(filters) {
+                // A Box that represents your painted guideline
+                Box(
+                    modifier = Modifier
+                        .constrainAs(guidelineLine) {
                             top.linkTo(filtersGuideline)
-                            bottom.linkTo(parent.bottom)
-                            height = Dimension.fillToConstraints
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
                         }
-                        .padding(top = 40.dp)
-                    ) {
-                        filtersList.forEach { pos ->
-        
-                            val isSelected = pos in selectedFiltersList
-                            val filterColor = if (isSelected) MyGreen else MyPurple
-                            Text(
-                                pos,
-                                color = filterColor,
-                                modifier = Modifier
-                                    .padding(6.dp)
-                                    .clickable {
-                                        selectedFiltersList =
-                                            toggleFilter(pos, selectedFiltersList, filtersList)
-                                    },
-                                fontSize = 40.sp
-                            )
-                        }
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color.Red) // You can change the color here
+                )
+                
+                GroupsFilterItem(
+                    arrayListOf<String>("verb", "noun", "adjective", "preposition"),
+                    arrayListOf<String>("verb", "noun", "adjective", "preposition"),
+                    modifier = Modifier
+                    .constrainAs(filters) {
+                        top.linkTo(filtersGuideline)
+                        bottom.linkTo(parent.bottom)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                        width = Dimension.fillToConstraints
                     }
-                }
+                )
 
                 LazyColumn(
                     modifier = Modifier
@@ -186,148 +152,31 @@ fun Display_groups(
                         },
                     verticalArrangement = Arrangement.Center,
                 ) {
+                    item {
 
-//            item {
-//                Button(
-//                    onClick = { buttonReview() },
-//                    shape = RoundedCornerShape(40.dp),
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(top = 20.dp)
-//                        .shadow(
-//                            6.dp,
-//                            shape = RoundedCornerShape(40.dp)
-//                        )
-//                        .animateItem(),
-//                    // shadow with rounded corners
-//                    colors = ButtonDefaults.buttonColors(
-//                        containerColor = MyGreen,
-//                        contentColor = MyGreenText,
-//                    )
-//                ) {
-//
-//
-//                    Row(
-//                        modifier = Modifier
-//                            .fillMaxSize()
-//                            .padding(end = 12.dp),
-//                        verticalAlignment = Alignment.CenterVertically
-//                    ) {
-//
-////                        Box(
-////                            modifier = Modifier
-////                                .size(48.dp)
-////                                .shadow(6.dp, shape = CircleShape)
-////                        ) {
-////                            CircularProgressIndicator(
-////                                progress = { group.learned.toFloat() / group.total },
-////                                modifier = Modifier.fillMaxSize(),
-////                                strokeWidth = 13.dp,
-////                                strokeCap = StrokeCap.Round,
-////                                color = MyGreen
-////                            )
-////                        }
-////
-////
-////                        Spacer(modifier = Modifier.width(12.dp))
-////
-////                        Text(
-////                            text = "${group.learned}/${group.total}",
-////                            modifier = Modifier.weight(1f),
-////                            color = MyGreenText,
-////                            style = TextStyle(
-////                                fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
-////                                shadow = Shadow(
-////                                    color = MyPurpleShadow,
-////                                    offset = Offset(-6f, 6f),  // adjust for shadow position
-////                                    blurRadius = 4f           // adjust for softness
-////                                )
-////                            )
-////                        )
-//
-//
-//
-//                        ScrollableTextWithArrow(
-//                            text = "Интервальное повторение",
-//                            modifier = Modifier
-//                                .weight(10f),
-//                            style = summaryStyle.copy(fontSize = 24.sp)
-//                        )
-//
-//
-//                    } //Button contents Row
-//
-//                }
-//            }
+                        GroupButtonWithProgress(
+                            onClick = { onReviewSelected },
+                            group = Item.GroupsWithProgressData(
+                                name = "Интервальное повторение",
+                                learned = 0,
+                                total = 1,
+                                pos = "outclass"
+                            ),
+                            colors = listOf(MyGreen, MyPurpleShadow, MyGreen, MyGreenText),
+                        )
+                    }
                     
-                    val groups = filteredGroups.filterIsInstance<Item.GroupsWithProgressData>()
+                    val groups = viewState.content.filterIsInstance<Item.GroupsWithProgressData>()
                     items(
                         items = groups,
                         key = { it.name }
                     ) { group ->
-                        Button(
-                            onClick = {
-                                buttonFunction(group.name)
-                            },
-                            shape = RoundedCornerShape(40.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 20.dp)
-                                .shadow(
-                                    6.dp,
-                                    shape = RoundedCornerShape(40.dp)
-                                )
-                                .animateItem(),
-                            // shadow with rounded corners
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MyPurple,
-                                contentColor = MyGreenText,
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(end = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .shadow(6.dp, shape = CircleShape)
-                                ) {
-                                    CircularProgressIndicator(
-                                        progress = { group.learned.toFloat() / group.total },
-                                        modifier = Modifier.fillMaxSize(),
-                                        strokeWidth = 13.dp,
-                                        strokeCap = StrokeCap.Round,
-                                        color = MyGreen
-                                    )
-                                }
-                                
-                                Spacer(modifier = Modifier.width(12.dp))
-                                
-                                Text(
-                                    text = "${group.learned}/${group.total}",
-                                    modifier = Modifier.weight(1f),
-                                    color = MyGreenText,
-                                    style = TextStyle(
-                                        fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
-                                        shadow = Shadow(
-                                            color = MyPurpleShadow,
-                                            offset = Offset(-6f, 6f),  // adjust for shadow position
-                                            blurRadius = 4f           // adjust for softness
-                                        )
-                                    )
-                                )
-                                
-                                ScrollableTextWithArrow(
-                                    text = group.name,
-                                    modifier = Modifier
-                                        .weight(10f),
-                                    style = groupsStyle
-                                )
-                            }
-                        }
+                        GroupButtonWithProgress(
+                            onClick = onGroupSelected,
+                            group,
+                            colors = listOf(MyPurple, MyGreenText, MyGreen, MyPurpleShadow),
+                            modifier = Modifier.animateItem()
+                        )
                     }
                 }
             }
