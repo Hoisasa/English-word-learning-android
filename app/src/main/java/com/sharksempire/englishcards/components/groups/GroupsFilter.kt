@@ -19,31 +19,34 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.Dimension
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sharksempire.englishcards.ui.composables.GroupsViewState
 import com.sharksempire.englishcards.ui.composables.Item
-import com.sharksempire.englishcards.ui.composables.screens.toggleFilter
+import com.sharksempire.englishcards.ui.composables.MainActivityViewModel
 import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyGreenText
 import com.sharksempire.englishcards.ui.theme.MyPurple
 import com.sharksempire.englishcards.ui.theme.MyPurpleShadow
 
 @Composable
-fun GroupsFilterItem(filtersList: ArrayList<String>, selectedFiltersList: ArrayList<String>, modifier: Modifier = Modifier) {
-    var localSelectedFilters = selectedFiltersList
+fun GroupsFilterItem(
+    filters: GroupsViewState.Success.FilterState,
+    onFilterCLicked: (String) -> Unit,
+    modifier: Modifier = Modifier)
+{
     
     Row(modifier.padding(bottom = 20.dp),
         Arrangement.SpaceAround
     ){
-        filtersList.forEach { pos ->
-            val isSelected = pos in localSelectedFilters
-            val filterColor = if (isSelected) MyGreen else MyPurple
+        filters.allFilters.forEach { pos ->
+            val filterColor = if (pos in filters.selectedFilters) MyGreen else MyPurple
             Text(
                 pos,
                 color = filterColor,
                 modifier = Modifier
                     .padding(6.dp)
                     .clickable {
-                        localSelectedFilters =
-                            toggleFilter(pos, selectedFiltersList, filtersList)
+                        onFilterCLicked(pos)
                     },
                 fontSize = 32.sp
             )
@@ -57,8 +60,12 @@ fun PreviewFilters() {
     LazyColumn(modifier = Modifier.fillMaxWidth()) {
         item{
             GroupsFilterItem(
-                arrayListOf<String>("verb", "noun", "adjective", "preposition"),
-                arrayListOf<String>("verb", "noun", "adjective", "preposition"),
+                GroupsViewState.Success.FilterState(
+                    listOf("Verb", "Noun", "Adjective", "Preposition"),
+                    listOf("Verb", "Adjective", "Preposition"),
+                    
+                ),
+                {}
             )
         }
     }

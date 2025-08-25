@@ -1,11 +1,7 @@
 package com.sharksempire.englishcards.ui.composables
 
-import android.util.Log
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -15,13 +11,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import androidx.room.ColumnInfo
-import androidx.room.util.copy
 import com.sharksempire.englishcards.dao.GroupsDao
 import com.sharksempire.englishcards.ui.composables.screens.Display_subgroups
 import com.sharksempire.englishcards.ui.composables.screens.ModeSelectScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -151,6 +145,7 @@ class MainActivityViewModel @Inject constructor(private val repo: DictionaryRepo
     private val _internalStorageFlow = MutableStateFlow<GroupsViewState>(
         value = GroupsViewState.Loading
     )
+
     val uiState = _internalStorageFlow.asStateFlow()
     
     fun getGroups() = viewModelScope.launch{
@@ -158,7 +153,10 @@ class MainActivityViewModel @Inject constructor(private val repo: DictionaryRepo
         repo.getGroups().onSuccess { groups ->
             _internalStorageFlow.update {
                 return@update GroupsViewState.Success(
-                    showFilter = GroupsFilter.Main.showFilter,
+                    filterState = GroupsViewState.Success.FilterState(
+                        groups.map {it.pos}.toSet().toList(),
+                        groups.map {it.pos}.toSet().toList()
+                    ),
                     content = groups,
                 )
             }
@@ -171,13 +169,38 @@ class MainActivityViewModel @Inject constructor(private val repo: DictionaryRepo
         }
     }
     
+    fun toggleFilter(filter: String) = viewModelScope.launch{
+        _internalStorageFlow.update {
+            val current = it as GroupsViewState.Success
+            val all = current.filterState.allFilters
+            val selected = current.filterState.selectedFilters
+            
+            val newValues = if (selected.toSet() == all.toSet()) {
+                listOf(filter)
+            } else if (filter in selected) {
+                if (listOf(filter) == selected) {
+                    all
+                } else {
+                    selected - filter
+                }
+            } else {
+                selected + filter
+            }
+            return@update current.copy(
+                filterState = current.filterState.copy(selectedFilters = newValues)
+            )
+        }
+    }
+    
     fun getSubgroups(target: String) = viewModelScope.launch{
         _internalStorageFlow.update { return@update GroupsViewState.Loading }
         repo.getSubgroups(target).onSuccess { groups ->
             _internalStorageFlow.update {
                 return@update GroupsViewState.Success(
-                    showFilter = GroupsFilter.Sub.showFilter,
-                    content = groups,
+                    filterState = GroupsViewState.Success.FilterState(
+                        listOf("null"),listOf("null")
+                    ),
+                    content = groups
                 )
             }
         }.onFailure { exception ->
@@ -348,3 +371,4 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
 //                }
 //            }
 //        }
+

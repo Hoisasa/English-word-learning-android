@@ -30,7 +30,6 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sharksempire.englishcards.components.groups.GroupButtonWithProgress
 import com.sharksempire.englishcards.components.groups.GroupsFilterItem
-import com.sharksempire.englishcards.ui.composables.screens.toggleFilter
 import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyGreenText
 import com.sharksempire.englishcards.ui.theme.MyPurple
@@ -92,9 +91,14 @@ sealed interface GroupsViewState {
     object Loading : GroupsViewState
     data class Error(val message: String) : GroupsViewState
     data class Success(
-        val showFilter: Boolean,
+        val filterState: FilterState,
         val content: List<Item>
-    ) : GroupsViewState
+    ) : GroupsViewState {
+        data class FilterState (
+            val allFilters: List<String>,
+            val selectedFilters: List<String>,
+        )
+    }
 }
 
 
@@ -131,8 +135,8 @@ fun Display_groups(
                 )
                 
                 GroupsFilterItem(
-                    arrayListOf<String>("verb", "noun", "adjective", "preposition"),
-                    arrayListOf<String>("verb", "noun", "adjective", "preposition"),
+                    filters = viewState.filterState,
+                    onFilterCLicked = viewModel::toggleFilter,
                     modifier = Modifier
                     .constrainAs(filters) {
                         top.linkTo(filtersGuideline)
@@ -168,7 +172,7 @@ fun Display_groups(
                     
                     val groups = viewState.content.filterIsInstance<Item.GroupsWithProgressData>()
                     items(
-                        items = groups,
+                        items = groups.filter { it.pos in viewState.filterState.selectedFilters },
                         key = { it.name }
                     ) { group ->
                         GroupButtonWithProgress(

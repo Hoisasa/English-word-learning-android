@@ -178,25 +178,6 @@ val groupSaver = Saver<GroupsWithProgressData?, String>(
     restore = { json -> Gson().fromJson(json, GroupsWithProgressData::class.java) }
 )
 
-fun toggleFilter(pos: String, selectedItems: ArrayList<String>, allPOS: ArrayList<String>): ArrayList<String> {
-    val setOfChosenFilters = selectedItems.toSet()
-    val setOfAllFilters = allPOS.toSet()
-    
-    val newGroups = (if (setOfChosenFilters == setOfAllFilters) {
-        arrayListOf(pos)
-    } else if (pos in setOfChosenFilters) {
-        if (setOfChosenFilters == arrayListOf(pos).toSet()) {
-            setOfAllFilters
-        } else {
-            setOfChosenFilters - pos
-        }
-    } else {
-        setOfChosenFilters + pos
-    })
-    
-    return ArrayList(newGroups)
-}
-
 fun extendDB(context: Context) {
     val path = context.getDatabasePath("dictionary.db").absolutePath
     val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE)
