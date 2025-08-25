@@ -14,6 +14,7 @@ import androidx.room.ColumnInfo
 import com.sharksempire.englishcards.dao.GroupsDao
 import com.sharksempire.englishcards.ui.composables.screens.Display_subgroups
 import com.sharksempire.englishcards.ui.composables.screens.ModeSelectScreen
+import com.sharksempire.englishcards.viewmodels.MainActivityViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -109,109 +110,9 @@ sealed interface QueryOperation<T> {
     }
 }
 
-class DictionaryRepository @Inject constructor(private val groupsDao: GroupsDao){
-    fun getGroups(): QueryOperation<List<Item.GroupsWithProgressData>> {
-        return safeQueryCall {
-            groupsDao.queryGroupsWithProgressData()
-        }
-    }
-    
-    fun getSubgroups(mainGroup: String): QueryOperation<List<Item.GroupsWithProgressData>> {
-        return safeQueryCall {
-            groupsDao.querySubgroupsWithProgressData(mainGroup)
-        }
-    }
-    
-    fun somethingelse(): QueryOperation<List<Item.SpacedRepetitionWordsWithLevel>> {
-        return safeQueryCall {
-            groupsDao.querySpacedRepetitionGroups()
-        }
-    }
-    
-    private inline fun <T> safeQueryCall(apiCall: () -> T): QueryOperation<T> {
-        return try {
-            QueryOperation.Success(data = apiCall())
-        } catch (e: Exception) {
-            QueryOperation.Failure(exception = e)
-        }
-    }
-}
 
 
-@HiltViewModel
-class MainActivityViewModel @Inject constructor(private val repo: DictionaryRepository) :
-    ViewModel() {
-    
-    private val _internalStorageFlow = MutableStateFlow<GroupsViewState>(
-        value = GroupsViewState.Loading
-    )
 
-    val uiState = _internalStorageFlow.asStateFlow()
-    
-    fun getGroups() = viewModelScope.launch{
-        _internalStorageFlow.update { return@update GroupsViewState.Loading }
-        repo.getGroups().onSuccess { groups ->
-            _internalStorageFlow.update {
-                return@update GroupsViewState.Success(
-                    filterState = GroupsViewState.Success.FilterState(
-                        groups.map {it.pos}.toSet().toList(),
-                        groups.map {it.pos}.toSet().toList()
-                    ),
-                    content = groups,
-                )
-            }
-        }.onFailure { exception ->
-            _internalStorageFlow.update {
-                return@update GroupsViewState.Error(
-                    message = exception.message ?: "Unknown error occurred"
-                )
-            }
-        }
-    }
-    
-    fun toggleFilter(filter: String) = viewModelScope.launch{
-        _internalStorageFlow.update {
-            val current = it as GroupsViewState.Success
-            val all = current.filterState.allFilters
-            val selected = current.filterState.selectedFilters
-            
-            val newValues = if (selected.toSet() == all.toSet()) {
-                listOf(filter)
-            } else if (filter in selected) {
-                if (listOf(filter) == selected) {
-                    all
-                } else {
-                    selected - filter
-                }
-            } else {
-                selected + filter
-            }
-            return@update current.copy(
-                filterState = current.filterState.copy(selectedFilters = newValues)
-            )
-        }
-    }
-    
-    fun getSubgroups(target: String) = viewModelScope.launch{
-        _internalStorageFlow.update { return@update GroupsViewState.Loading }
-        repo.getSubgroups(target).onSuccess { groups ->
-            _internalStorageFlow.update {
-                return@update GroupsViewState.Success(
-                    filterState = GroupsViewState.Success.FilterState(
-                        listOf("null"),listOf("null")
-                    ),
-                    content = groups
-                )
-            }
-        }.onFailure { exception ->
-            _internalStorageFlow.update {
-                return@update GroupsViewState.Error(
-                    message = exception.message ?: "Unknown error occurred"
-                )
-            }
-        }
-    }
-}
 
 @Serializable
 sealed interface Screen {
