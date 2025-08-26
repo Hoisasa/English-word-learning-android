@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sharksempire.englishcards.components.groups.ScrollableTextWithArrow
 import com.sharksempire.englishcards.ui.composables.GroupsViewState
 import com.sharksempire.englishcards.ui.composables.Item
 import com.sharksempire.englishcards.ui.theme.MyGreen
@@ -43,7 +44,7 @@ import com.sharksempire.englishcards.viewmodels.MainActivityViewModel
 
 @Composable
 fun Display_subgroups(
-    onSubgroupSelected: () -> Unit,
+    onSubgroupSelected: (String) -> Unit,
     target: String,
     viewModel: MainActivityViewModel = hiltViewModel(),
 ) {
@@ -70,7 +71,7 @@ fun Display_subgroups(
                         Button(
                             onClick = {
                                 viewModel.getSubgroups(group.name)
-                                onSubgroupSelected()
+                                onSubgroupSelected(group.name)
                             },
                             shape = RoundedCornerShape(40.dp),
                             modifier = Modifier

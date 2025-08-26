@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.sharksempire.englishcards.AppDatabase
 import com.sharksempire.englishcards.dao.GroupsDao
+import com.sharksempire.englishcards.dao.WordsDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -31,5 +32,11 @@ class DatabaseModule {
     @Singleton
     fun providesGroupsDao(db: AppDatabase): GroupsDao {
         return db.groupsDao()
+    }
+    
+    @Provides
+    @Singleton
+    fun providesWordsDao(db: AppDatabase): WordsDao {
+        return db.wordsDao()
     }
 }

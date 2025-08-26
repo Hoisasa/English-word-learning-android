@@ -1,11 +1,15 @@
 package com.sharksempire.englishcards.repositories
 
 import com.sharksempire.englishcards.dao.GroupsDao
+import com.sharksempire.englishcards.dao.WordData
+import com.sharksempire.englishcards.dao.WordsDao
 import com.sharksempire.englishcards.ui.composables.Item
-import com.sharksempire.englishcards.ui.composables.QueryOperation
 import javax.inject.Inject
 
-class DictionaryRepository @Inject constructor(private val groupsDao: GroupsDao){
+class DictionaryRepository @Inject constructor(
+    private val groupsDao: GroupsDao,
+    private val wordsDao: WordsDao
+){
     fun getGroups(): QueryOperation<List<Item.GroupsWithProgressData>> {
         return safeQueryCall {
             groupsDao.queryGroupsWithProgressData()
@@ -24,11 +28,32 @@ class DictionaryRepository @Inject constructor(private val groupsDao: GroupsDao)
         }
     }
     
+    fun getWords(subGroup: String): QueryOperation<List<WordData>> {
+        return safeQueryCall {
+            wordsDao.queryWords(subGroup = subGroup)
+        }
+    }
+    
     private inline fun <T> safeQueryCall(apiCall: () -> T): QueryOperation<T> {
         return try {
             QueryOperation.Success(data = apiCall())
         } catch (e: Exception) {
             QueryOperation.Failure(exception = e)
         }
+    }
+}
+
+sealed interface QueryOperation<T> {
+    data class Success<T>(val data: T): QueryOperation<T>
+    data class Failure<T>(val exception: Exception): QueryOperation<T>
+    
+    fun onSuccess(block: (T) -> Unit): QueryOperation<T> {
+        if (this is Success) block(data)
+        return this
+    }
+    
+    fun onFailure(block: (Exception) -> Unit): QueryOperation<T> {
+        if (this is Failure) block(exception)
+        return this
     }
 }

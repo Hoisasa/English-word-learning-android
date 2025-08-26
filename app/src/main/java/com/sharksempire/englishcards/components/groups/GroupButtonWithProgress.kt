@@ -29,10 +29,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sharksempire.englishcards.ui.composables.Item
-import com.sharksempire.englishcards.ui.composables.screens.ScrollableTextWithArrow
 import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyGreenText
-import com.sharksempire.englishcards.ui.theme.MyPurple
 import com.sharksempire.englishcards.ui.theme.MyPurpleShadow
 import com.sharksempire.englishcards.ui.theme.groupsStyle
 

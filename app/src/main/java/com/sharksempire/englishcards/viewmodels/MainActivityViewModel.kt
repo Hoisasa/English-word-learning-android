@@ -84,4 +84,24 @@ class MainActivityViewModel @Inject constructor(private val repo: DictionaryRepo
             }
         }
     }
+    
+    fun getWords(target: String) = viewModelScope.launch {
+        _internalStorageFlow.update { return@update GroupsViewState.Loading }
+        repo.getSubgroups(target).onSuccess { groups ->
+            _internalStorageFlow.update {
+                return@update GroupsViewState.Success(
+                    filterState = GroupsViewState.Success.FilterState(
+                        listOf("null"),listOf("null")
+                    ),
+                    content = groups
+                )
+            }
+        }.onFailure { exception ->
+            _internalStorageFlow.update {
+                return@update GroupsViewState.Error(
+                    message = exception.message ?: "Unknown error occurred"
+                )
+            }
+        }
+    }
 }

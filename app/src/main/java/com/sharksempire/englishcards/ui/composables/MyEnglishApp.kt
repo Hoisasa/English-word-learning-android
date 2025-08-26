@@ -2,51 +2,24 @@ package com.sharksempire.englishcards.ui.composables
 
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import androidx.room.ColumnInfo
-import com.sharksempire.englishcards.dao.GroupsDao
 import com.sharksempire.englishcards.ui.composables.screens.Display_subgroups
+import com.sharksempire.englishcards.ui.composables.screens.LessonViewState
 import com.sharksempire.englishcards.ui.composables.screens.ModeSelectScreen
-import com.sharksempire.englishcards.viewmodels.MainActivityViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import com.sharksempire.englishcards.ui.composables.screens.StudyScreen
+import com.sharksempire.englishcards.ui.composables.screens.SummaryScreen
+import com.sharksempire.englishcards.viewmodels.LessonViewModel
 import kotlinx.serialization.Serializable
-import javax.inject.Inject
-
-//var screenState by rememberSaveable { mutableStateOf("GroupsScreen") }
-//var currentGroup by rememberSaveable { mutableStateOf("") }
-//var currentSubGroup by rememberSaveable(stateSaver = groupSaver) {
-//    mutableStateOf<GroupsWithProgressData?>(
-//        null
-//    )
-//}
-//var studyMode by rememberSaveable { mutableStateOf("") }
-//val groups by rememberSaveable(stateSaver = groupsSaver) { mutableStateOf(mutableStateListOf()) }
-//val lessonWords by rememberSaveable(stateSaver = wordDataSaver) {
-//    mutableStateOf(
-//        mutableStateListOf()
-//    )
-//}
-//var grade by rememberSaveable { mutableIntStateOf(0) }
-//var restartRequested by rememberSaveable { mutableStateOf(true) }
-//var isLoading by rememberSaveable { mutableStateOf(true) }
-//var endOfLesson by rememberSaveable { mutableStateOf(false) }
-//val lessonMistakes by rememberSaveable(stateSaver = wordDataSaver) {
-//    mutableStateOf(
-//        mutableStateListOf()
-//    )
-//}
-//var showFilter by rememberSaveable { mutableStateOf(true) }
+import kotlin.reflect.typeOf
 
 
 sealed interface ScreenState {
@@ -95,20 +68,7 @@ sealed interface CurrentTarget {
     ) : CurrentTarget
 }
 
-sealed interface QueryOperation<T> {
-    data class Success<T>(val data: T): QueryOperation<T>
-    data class Failure<T>(val exception: Exception): QueryOperation<T>
-    
-    fun onSuccess(block: (T) -> Unit): QueryOperation<T> {
-        if (this is Success) block(data)
-        return this
-    }
-    
-    fun onFailure(block: (Exception) -> Unit): QueryOperation<T> {
-        if (this is Failure) block(exception)
-        return this
-    }
-}
+
 
 
 
@@ -123,18 +83,17 @@ sealed interface Screen {
     @Serializable
     data class Review(val target: String)
     @Serializable
-    object Mode
+    data class Mode(val target: String)
     @Serializable
-    object Lesson
+    data class Lesson(val mode: LessonViewState.Success.StudyMode)
     @Serializable
     object Summary
+    @Serializable
+    object LessonGraph
 }
 
 @Composable
 fun MyEnglishApp(modifier: Modifier = Modifier) {
-    
-    
-    val viewModel: MainActivityViewModel = hiltViewModel()
     val navController = rememberNavController()
     
     Surface(modifier) {
@@ -152,20 +111,67 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
             composable<Screen.SubGroups> {
                 val arguments = it.toRoute<Screen.SubGroups>()
                 Display_subgroups(
-                    onSubgroupSelected = {
-                        navController.navigate(route = Screen.Mode)
+                    onSubgroupSelected = { target ->
+                        navController.navigate(route = Screen.Mode(target = target))
                     },
                     target = arguments.target
                 )
             }
-            composable<Screen.Mode> {
-                ModeSelectScreen(
-                    onModeChosen = { navController.navigate(route = Screen.Lesson) }
-                )
+            
+            navigation(startDestination = "Mode", route = "LessonGraph"){
+                composable<Screen.Mode> { backStackEntry ->
+                    val parentEntry = remember { navController.getBackStackEntry("LessonGraph") }
+                    val lessonVM = hiltViewModel<LessonViewModel>(parentEntry)
+                    val arguments = backStackEntry.toRoute<Screen.Mode>()
+                    
+                    ModeSelectScreen(
+                        onModeChosen = { mode ->
+                            navController.navigate(route = Screen.Lesson(mode))
+                        },
+                        target = arguments.target,
+                        viewModel = lessonVM,
+                    )
+                }
+                
+                composable<Screen.Lesson>(
+                    typeMap = mapOf(
+                        typeOf<LessonViewState.Success.StudyMode>() to LessonViewState.Success.ModeNavType.ModeType
+                    )
+                ) { backStackEntry ->
+                    val parentEntry = remember { navController.getBackStackEntry("LessonGraph") }
+                    val lessonVM = hiltViewModel<LessonViewModel>(parentEntry)
+                    val arguments = backStackEntry.toRoute<Screen.Lesson>()
+                    
+                    StudyScreen(
+                        onLessonFinished = { navController.navigate(route = Screen.Summary) },
+                        mode = arguments.mode,
+                        viewModel = lessonVM,
+                    )
+                }
+                
+                composable<Screen.Summary> { backStackEntry ->
+                    val parentEntry = remember { navController.getBackStackEntry("LessonGraph") }
+                    val lessonVM = hiltViewModel<LessonViewModel>(parentEntry)
+                    
+                    SummaryScreen(
+                        onSaveClicked = { navController.navigate(route = Screen.SubGroups) },
+                        viewModel = lessonVM
+                    )
+                }
             }
         }
     }
 }
+
+//fun extendDB(context: Context) {
+//    val path = context.getDatabasePath("dictionary.db").absolutePath
+//    val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE)
+//
+//    db.use {
+//        it.execSQL("ALTER TABLE subgroups ADD COLUMN level INTEGER NOT NULL DEFAULT 0")
+//        it.execSQL("UPDATE subgroups SET level = 1 WHERE exam_completed = 1")
+//    }
+//}
 
 //
 //            "ModeSelectScreen" -> {

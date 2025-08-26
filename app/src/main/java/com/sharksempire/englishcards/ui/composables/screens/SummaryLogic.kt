@@ -8,14 +8,7 @@ import com.sharksempire.englishcards.ui.theme.GradeColorLow
 import com.sharksempire.englishcards.ui.theme.GradeColorMedium
 import com.sharksempire.englishcards.ui.theme.GradeColorPerfect
 
-fun getGradeColor(lessonScore: Int): Color {
-    return when {
-        lessonScore == 100 -> GradeColorPerfect
-        lessonScore >= 80 -> GradeColorHigh
-        lessonScore >= 60 -> GradeColorMedium
-        else -> GradeColorLow
-    }
-}
+
 
 fun getGrades(db: SQLiteDatabase, subgroupName: String): List<Int> {
     val grades = mutableListOf<Int>()

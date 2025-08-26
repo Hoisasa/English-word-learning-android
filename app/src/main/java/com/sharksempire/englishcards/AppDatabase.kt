@@ -8,6 +8,7 @@ import com.example.dict.db.POSEntity
 import com.example.dict.db.SubGroupEntity
 import com.example.dict.db.WordEntity
 import com.sharksempire.englishcards.dao.GroupsDao
+import com.sharksempire.englishcards.dao.WordsDao
 
 @Database(entities = [
     POSEntity::class,
@@ -19,4 +20,5 @@ import com.sharksempire.englishcards.dao.GroupsDao
     version = 1,)
 abstract class AppDatabase: RoomDatabase() {
     abstract fun groupsDao(): GroupsDao
+    abstract fun wordsDao(): WordsDao
 }

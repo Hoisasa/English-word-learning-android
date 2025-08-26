@@ -108,22 +108,3 @@ fun buildAssetFilePath(subGroup: String, wordName: String): String {
     val safeWordName = wordName.split(" (")[0]
     return "audiofiles/$safeSubGroup/$safeWordName.ogg"
 }
-
-
-
-data class WordData(
-    val id: Int,
-    val word: String,
-    val translation: String,
-    val transcription: String? = null,
-    var weight: Float,
-    val subgroup: String,
-)
-
-val wordDataSaver = Saver<SnapshotStateList<WordData>, String>(
-    save = { list -> Gson().toJson(list) },
-    restore = { json ->
-        val type = object : TypeToken<List<WordData>>() {}.type
-        Gson().fromJson<List<WordData>>(json, type).toMutableStateList()
-    }
-)

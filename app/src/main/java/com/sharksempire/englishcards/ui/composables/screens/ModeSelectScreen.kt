@@ -17,6 +17,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -37,14 +38,19 @@ import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyGreenText
 import com.sharksempire.englishcards.ui.theme.MyPurple
 import com.sharksempire.englishcards.ui.theme.MyPurpleShadow
+import com.sharksempire.englishcards.viewmodels.LessonViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 
-@Preview (showBackground = true)
+@Preview
 @Composable
 fun ModeSelectScreen (
-    onModeChosen: (String) -> Unit = {},
-    thisSubGroup: GroupsWithProgressData? = null,
-    modifier: Modifier = Modifier,
+    onModeChosen: (LessonViewState.Success.StudyMode) -> Unit = {},
+    target: String = "",
+    viewModel: LessonViewModel = hiltViewModel(),
 ) {
+    
+    LaunchedEffect(target) { viewModel.getWords(target) }
     
     Box(Modifier
         .fillMaxWidth(),
@@ -68,10 +74,15 @@ fun ModeSelectScreen (
                     blurRadius = 4f           // adjust for softness
                 ))
             )
-            for (text in listOf("Overview", "Practice", "Exam")) {
+            for (mode in listOf(
+                    LessonViewState.Success.StudyMode.OVER,
+                    LessonViewState.Success.StudyMode.PRAC,
+                    LessonViewState.Success.StudyMode.EXAM,
+                )
+            ) {
                 
                 Button(
-                    onClick = { onModeChosen(text) },
+                    onClick = { onModeChosen(mode) },
                     shape = RoundedCornerShape(40.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -92,13 +103,11 @@ fun ModeSelectScreen (
                     ) {
                         Text(
                             text = buildAnnotatedString {
-                                if (text.isNotEmpty()) {
-                                    withStyle(style = SpanStyle(color = LightPurple)) {
-                                        append(text[0])
-                                    }
-                                    withStyle(style = SpanStyle(color = MyGreen)) {
-                                        append(text.substring(1))
-                                    }
+                                withStyle(style = SpanStyle(color = LightPurple)) {
+                                    append(mode.displayName[0])
+                                }
+                                withStyle(style = SpanStyle(color = MyGreen)) {
+                                    append(mode.displayName.substring(1))
                                 }
                             },
                             modifier = Modifier.padding(top = 15.dp),
