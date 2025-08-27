@@ -52,6 +52,7 @@ import com.sharksempire.englishcards.ui.theme.MyRed
 import com.sharksempire.englishcards.ui.theme.PurpleGrey40
 import com.sharksempire.englishcards.ui.theme.summaryStyle
 import com.sharksempire.englishcards.viewmodels.LessonViewModel
+import kotlin.math.roundToInt
 
 @Composable
 fun SummaryScreen(
@@ -65,8 +66,7 @@ fun SummaryScreen(
         LessonViewState.Loading -> CircularProgressIndicator(modifier = Modifier.size(50.dp))
         is LessonViewState.Error -> Text(text = viewState.message)
         is LessonViewState.Success -> {
-            
-            val lessonScore = ((viewState.mistakes.size.toFloat() / viewState.words.size) * 100).toInt()
+            val lessonScore = viewModel.getScore()
             ConstraintLayout(
                 modifier = Modifier
                     .fillMaxSize()

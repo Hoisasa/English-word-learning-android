@@ -13,67 +13,6 @@ import kotlin.math.roundToInt
 
 
 private var activePlayer: MediaPlayer? = null
-const val MAX_POINTS = 5
-
-
-fun getMark(isCorrect: Boolean, isExam: String): Float {
-    
-    val multiplier: Int = when (isExam) {
-        "Exam" -> 3
-        else -> 1
-    }
-    
-    val signed: Int = if (isCorrect) 1 else -1
-    val mark = signed.toFloat() / MAX_POINTS * multiplier
-    return mark
-}
-
-fun updateQuery(wordId: Int, mark: Float, context: Context) {
-    val path = context.getDatabasePath("dictionary.db").absolutePath
-    val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE)
-    val stmt = db.compileStatement(
-        """
-    UPDATE words
-    SET weight = CASE
-        WHEN weight + ? > 0.9999 THEN 1.0
-        WHEN weight + ? < 0.0001 THEN 0.0
-        ELSE weight + ?
-    END
-    WHERE id = ?
-    """.trimIndent()
-    )
-    
-    stmt.bindDouble(1, mark.toDouble()) // for weight + ?
-    stmt.bindDouble(2, mark.toDouble()) // for weight + ?
-    stmt.bindDouble(3, mark.toDouble()) // for weight + ?
-    stmt.bindLong(4, wordId.toLong())   // for id = ?
-    
-    val updatedRows = stmt.executeUpdateDelete()
-    Log.d("queries", "updated rows: $updatedRows")
-    stmt.close()
-}
-
-
-fun updateWeight(isCorrect: Boolean, isExam: String, wordId: Int, context: Context) {
-    val mark = getMark(isCorrect, isExam)
-    val start = System.currentTimeMillis()
-    
-    updateQuery(wordId, mark, context)
-    
-    val end = System.currentTimeMillis()
-    val elapsedMs = end - start
-    Log.d("Timing", "Weight update took $elapsedMs ms")
-}
-
-
-fun showPoints(weight: Float): String {
-    return "⭐".repeat((weight * MAX_POINTS).roundToInt())
-}
-
-
-fun calculateGrade(mistakes: Int, size: Int): Int {
-    return (((size - mistakes).toFloat() / size) * 100).roundToInt()
-}
 
 
 fun playOggFromAssets(context: Context, assetPath: String) {

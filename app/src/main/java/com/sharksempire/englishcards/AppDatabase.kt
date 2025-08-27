@@ -17,7 +17,7 @@ import com.sharksempire.englishcards.dao.WordsDao
     WordEntity::class,
     GradeEntity::class,
     ],
-    version = 1,)
+    version = 3,)
 abstract class AppDatabase: RoomDatabase() {
     abstract fun groupsDao(): GroupsDao
     abstract fun wordsDao(): WordsDao

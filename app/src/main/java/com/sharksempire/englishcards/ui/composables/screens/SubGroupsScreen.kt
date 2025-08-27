@@ -53,7 +53,7 @@ fun Display_subgroups(
     
     when(val viewState = state) {
         GroupsViewState.Loading -> CircularProgressIndicator(modifier = Modifier.size(50.dp))
-        is GroupsViewState.Error -> Text(text = viewState.message)
+        is GroupsViewState.Error -> Text(text = viewState.message, fontSize = 20.sp)
         is GroupsViewState.Success -> {
             Box(
                 modifier = Modifier.fillMaxSize(),

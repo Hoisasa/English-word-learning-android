@@ -2,6 +2,7 @@ package com.sharksempire.englishcards.repositories
 
 import com.sharksempire.englishcards.dao.GroupsDao
 import com.sharksempire.englishcards.dao.WordData
+import com.sharksempire.englishcards.dao.WordWeight
 import com.sharksempire.englishcards.dao.WordsDao
 import com.sharksempire.englishcards.ui.composables.Item
 import javax.inject.Inject
@@ -10,27 +11,39 @@ class DictionaryRepository @Inject constructor(
     private val groupsDao: GroupsDao,
     private val wordsDao: WordsDao
 ){
-    fun getGroups(): QueryOperation<List<Item.GroupsWithProgressData>> {
+    suspend fun getGroups(): QueryOperation<List<Item.GroupsWithProgressData>> {
         return safeQueryCall {
             groupsDao.queryGroupsWithProgressData()
         }
     }
     
-    fun getSubgroups(mainGroup: String): QueryOperation<List<Item.GroupsWithProgressData>> {
+    suspend fun getSubgroups(mainGroup: String): QueryOperation<List<Item.GroupsWithProgressData>> {
         return safeQueryCall {
             groupsDao.querySubgroupsWithProgressData(mainGroup)
         }
     }
     
-    fun somethingelse(): QueryOperation<List<Item.SpacedRepetitionWordsWithLevel>> {
+    suspend fun somethingelse(): QueryOperation<List<Item.SpacedRepetitionWordsWithLevel>> {
         return safeQueryCall {
             groupsDao.querySpacedRepetitionGroups()
         }
     }
     
-    fun getWords(subGroup: String): QueryOperation<List<WordData>> {
+    suspend fun getWords(subGroup: String): QueryOperation<List<WordData>> {
         return safeQueryCall {
             wordsDao.queryWords(subGroup = subGroup)
+        }
+    }
+    
+    suspend fun updateWeight(wordId: Int, mark: Float): QueryOperation<Unit> {
+        return safeQueryCall {
+            wordsDao.queryUpdateWeight(wordId = wordId, mark = mark)
+        }
+    }
+    
+    suspend fun getNewWeights(subGroup: String): QueryOperation<Map<Int, Float>> {
+        return safeQueryCall {
+            wordsDao.queryNewWeights(subGroup = subGroup).associate { it.id to it.weight }
         }
     }
     

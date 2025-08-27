@@ -59,6 +59,8 @@ data class WordEntity(
     val translation: String,
     val transcription: String?,
     val weight: Float = 0f,
+    @ColumnInfo(name = "exam_completed_at") val examCompletedAt: Long?,
+    val level: Int = 0,
     @ColumnInfo(name = "subgroup_name") val subgroupName: String?       // NOT NULL via SQLAlchemy
 )
 
@@ -78,5 +80,6 @@ data class GradeEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     @ColumnInfo(name = "subgroup_name") val subgroupName: String?,      // NOT NULL via SQLAlchemy
     val grade: Int?,
-    val epoch: Int
+    val epoch: Int,
+    val mode: String,
 )

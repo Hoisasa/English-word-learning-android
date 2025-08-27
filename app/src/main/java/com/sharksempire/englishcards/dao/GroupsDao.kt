@@ -22,7 +22,7 @@ interface GroupsDao {
         GROUP BY main_groups.name
         ORDER BY learned_words DESC
         """)
-    fun queryGroupsWithProgressData(): List<Item.GroupsWithProgressData>
+    suspend fun queryGroupsWithProgressData(): List<Item.GroupsWithProgressData>
     
     @Query(
         """
@@ -38,7 +38,7 @@ interface GroupsDao {
         WHERE subgroups.main_group_id = :mainGroup
         GROUP BY subgroups.name, pos.name
         """)
-    fun querySubgroupsWithProgressData(mainGroup: String): List<Item.GroupsWithProgressData>
+    suspend fun querySubgroupsWithProgressData(mainGroup: String): List<Item.GroupsWithProgressData>
     
     @Query(
         """
@@ -54,7 +54,7 @@ interface GroupsDao {
         GROUP BY subgroups.name, pos.name
         """
     )
-    fun querySpacedRepetitionGroups(): List<Item.SpacedRepetitionWordsWithLevel>
+    suspend fun querySpacedRepetitionGroups(): List<Item.SpacedRepetitionWordsWithLevel>
 }
 
 

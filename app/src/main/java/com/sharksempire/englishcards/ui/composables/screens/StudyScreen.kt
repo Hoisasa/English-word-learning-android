@@ -1,5 +1,6 @@
 package com.sharksempire.englishcards.ui.composables.screens
 
+import android.R
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,7 +24,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -39,11 +42,14 @@ import com.sharksempire.englishcards.dao.WordData
 import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyGreenText
 import com.sharksempire.englishcards.ui.theme.MyPurple
+import com.sharksempire.englishcards.ui.theme.MyPurpleShadow
 import com.sharksempire.englishcards.ui.theme.MyRed
+import com.sharksempire.englishcards.ui.theme.groupsStyle
 import com.sharksempire.englishcards.viewmodels.LessonViewModel
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.math.roundToInt
 
 
 sealed interface LessonViewState {
@@ -51,6 +57,7 @@ sealed interface LessonViewState {
     data class Error(val message: String): LessonViewState
     data class Success(
         val subGroup: String,
+        val rawWords: List<WordData>,
         val words: List<WordData>,
         val mode: StudyMode = StudyMode.UNKN,
         val mistakes: List<WordData> = emptyList(),
@@ -97,14 +104,15 @@ fun StudyScreen(
     mode: LessonViewState.Success.StudyMode,
     viewModel: LessonViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(Unit, block = {
+    LaunchedEffect(mode, block = {
         viewModel.setMode(mode)
+        viewModel.prepareLesson()
     })
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     
     when (val viewState = state) {
         LessonViewState.Loading -> CircularProgressIndicator(modifier = Modifier.size(50.dp))
-        is LessonViewState.Error -> Text(text = viewState.message)
+        is LessonViewState.Error -> Text(text = viewState.message, fontSize = 20.sp)
         is LessonViewState.Success -> {
             ConstraintLayout(modifier = Modifier.fillMaxSize()) {
                 val (word, translation, transcription, points, correctAnswer, wrongAnswer, functionButton, audio, repeat, progressBar) = createRefs()
@@ -124,7 +132,7 @@ fun StudyScreen(
                 
                 
                 Text(
-                    showPoints(current.weight),
+                    "⭐".repeat((current.weight * viewModel.MAX_POINTS).roundToInt()),
                     style = TextStyle(
                         fontSize = 38.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -204,6 +212,7 @@ fun StudyScreen(
                     Button( onClick = {
                             val isEnd = viewState.currentIndex == viewState.words.size -1
                             viewModel.handleAnswer(isCorrect = true, isEnd)
+                            if (isEnd) { onLessonFinished() }
                         },
                         modifier = Modifier
                             .constrainAs(correctAnswer) {
@@ -293,8 +302,8 @@ fun StudyScreen(
                     
                     Button(
                         onClick = {
-
-                        }, // sets restartRequested to true
+//                            viewModel.prepareLesson()
+                        },
                         modifier = Modifier
                             .constrainAs(repeat) {
                                 top.linkTo(topGuideline)
@@ -314,7 +323,8 @@ fun StudyScreen(
                 } else {
                     Button(
                         onClick = {
-
+                            val isEnd = viewState.currentIndex == viewState.words.size -1
+                            viewModel.handleAnswer(isCorrect = true, isEnd)
                         },
                         modifier = Modifier
                             .constrainAs(functionButton) {
@@ -354,7 +364,9 @@ fun StudyScreen(
                     }
                     
                     Button(
-                        onClick = { },
+                        onClick = {
+                            viewModel.resetIndex()
+                        },
                         modifier = Modifier
                             .constrainAs(repeat) {
                                 top.linkTo(topGuideline)
@@ -386,17 +398,27 @@ fun StudyScreen(
                 ) {
                     
                     LinearProgressIndicator(
-                        progress = { viewState.currentIndex.toFloat() / viewState.words.size },
+                        progress = { (viewState.currentIndex +1).toFloat() / viewState.words.size },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(10.dp),
                         color = MyPurple,
                         trackColor = ProgressIndicatorDefaults.linearTrackColor,
                         strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-                        
+                    )
+                    Text(
+                        text = "${viewState.currentIndex + 1} / ${viewState.words.size}",
+                        color = MyPurpleShadow,
+                        style = groupsStyle.copy(
+                            fontSize = 32.sp,
+                            shadow = Shadow(
+                                color = Color.White,
+                                offset = Offset(0f, 0f),
+                                blurRadius = 2f
+                            )
                         )
+                    )
                 }
-                
             }
         }
     }
