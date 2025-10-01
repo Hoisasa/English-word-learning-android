@@ -38,6 +38,7 @@ interface WordsDao {
         SET exam_completed_at = CURRENT_TIMESTAMP,
             level = 2
         WHERE subgroup_name = :subGroup
+            AND level <= 0
         """)
     suspend fun markExamCompleted(subGroup: String)
     

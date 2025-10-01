@@ -1,15 +1,8 @@
 package com.sharksempire.englishcards.ui.composables
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,18 +11,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sharksempire.englishcards.components.groups.GroupButtonWithProgress
@@ -38,7 +28,7 @@ import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyGreenText
 import com.sharksempire.englishcards.ui.theme.MyPurple
 import com.sharksempire.englishcards.ui.theme.MyPurpleShadow
-import com.sharksempire.englishcards.viewmodels.MainActivityViewModel
+import com.sharksempire.englishcards.viewmodels.GroupsViewModel
 
 sealed interface GroupsViewState {
     object Loading : GroupsViewState
@@ -58,17 +48,15 @@ sealed interface GroupsViewState {
 @Composable
 fun Display_groups(
     onGroupSelected: (String) -> Unit,
-    onReviewSelected: () -> Unit = {},
-    viewModel: MainActivityViewModel = hiltViewModel(),
+    viewModel: GroupsViewModel = hiltViewModel(),
 ) {
-    LaunchedEffect(Unit, block = { viewModel.getGroups() })
+
     val state by viewModel.uiState.collectAsState()
-    
+
     when(val viewState = state) {
         GroupsViewState.Loading -> CircularProgressIndicator(modifier = Modifier.size(50.dp))
         is GroupsViewState.Error -> {
             val scrollState = rememberScrollState()
-            
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -78,62 +66,62 @@ fun Display_groups(
                 Text(text = viewState.message, fontSize = 20.sp)
             }
         }
+
         is GroupsViewState.Success -> {
+            val buttonsId = "buttons"
+            val filtersId = "filters"
+
+            val startSet = ConstraintSet {
+                val (buttons, filters) = createRefsFor(buttonsId, filtersId)
+                val filtersGuideline = createGuidelineFromTop(0.9f)
+
+                constrain(buttons) {
+                    top.linkTo(parent.top)
+                    bottom.linkTo(filtersGuideline)
+                    height = Dimension.fillToConstraints
+                }
+
+                constrain(filters) {
+                    top.linkTo(filtersGuideline)
+                    bottom.linkTo(parent.bottom)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    width = Dimension.fillToConstraints
+                }
+            }
+
+//            val endSet = ConstraintSet {
+//                val (buttons, filters) = createRefsFor(buttonsId, filtersId)
+//                val filtersGuideline = createGuidelineFromTop(0.9f)
+//
+//                constrain(buttons) {
+//                    top.linkTo(parent.top)
+//                    bottom.linkTo(filtersGuideline)
+//                    height = Dimension.fillToConstraints
+//                }
+//
+//                constrain(filters) {
+//                    top.linkTo(filtersGuideline)
+//                    bottom.linkTo(parent.bottom)
+//                    start.linkTo(parent.start)
+//                    end.linkTo(parent.end)
+//                    width = Dimension.fillToConstraints
+//                }
+//            }
             ConstraintLayout(
+                constraintSet = startSet,
                 modifier = Modifier.fillMaxSize()
             ) {
-                val (buttons, filters, guidelineLine) = createRefs()
-                val filtersGuideline = createGuidelineFromTop(0.9f)
-                
-                // A Box that represents your painted guideline
-                Box(
-                    modifier = Modifier
-                        .constrainAs(guidelineLine) {
-                            top.linkTo(filtersGuideline)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                        }
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Color.Red) // You can change the color here
-                )
-                
                 GroupsFilterItem(
                     filters = viewState.filterState,
                     onFilterCLicked = viewModel::toggleFilter,
-                    modifier = Modifier
-                    .constrainAs(filters) {
-                        top.linkTo(filtersGuideline)
-                        bottom.linkTo(parent.bottom)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        width = Dimension.fillToConstraints
-                    }
+                    modifier = Modifier.layoutId(filtersId)
                 )
 
                 LazyColumn(
-                    modifier = Modifier
-                        .constrainAs(buttons) {
-                            top.linkTo(parent.top)
-                            bottom.linkTo(filtersGuideline)
-                            height = Dimension.fillToConstraints
-                        },
+                    modifier = Modifier.layoutId(buttonsId),
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    item {
-
-                        GroupButtonWithProgress(
-                            onClick = { onReviewSelected },
-                            group = Item.GroupsWithProgressData(
-                                name = "Интервальное повторение",
-                                learned = 0,
-                                total = 1,
-                                pos = "noneclass"
-                            ),
-                            colors = listOf(MyGreen, MyPurpleShadow, MyGreen, MyGreenText),
-                        )
-                    }
-                    
                     val groups = viewState.content.filterIsInstance<Item.GroupsWithProgressData>()
                     items(
                         items = groups.filter { it.pos in viewState.filterState.selectedFilters },

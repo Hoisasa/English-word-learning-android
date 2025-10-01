@@ -1,6 +1,5 @@
 package com.sharksempire.englishcards.viewmodels
 
-import androidx.compose.foundation.layout.Box
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sharksempire.englishcards.dao.WordData
@@ -49,10 +48,14 @@ class LessonViewModel @Inject constructor(private val repo: DictionaryRepository
     }
     fun setMode(mode: LessonViewState.Success.StudyMode) = viewModelScope.launch {
         val current = _internalStorageFlow.value as? LessonViewState.Success ?: return@launch
-        _internalStorageFlow.update {
-            return@update current.copy(
-                mode = mode
-            )
+        if (current.mode.displayName == mode.displayName) {
+            return@launch
+        } else {
+            _internalStorageFlow.update {
+                return@update current.copy(
+                    mode = mode
+                )
+            }
         }
     }
     
@@ -74,9 +77,25 @@ class LessonViewModel @Inject constructor(private val repo: DictionaryRepository
         }
     }
     
-    fun handleAnswer(isCorrect: Boolean, isEnd: Boolean) = viewModelScope.launch {
+    fun getNextIndex(): Int {
         val currentState = _internalStorageFlow.value as LessonViewState.Success
+        val isEnd = currentState.currentIndex == currentState.words.size -1
         val newIndex = if (isEnd) 0 else currentState.currentIndex +1
+        
+        return newIndex
+    }
+    
+    fun setNextIndex() = viewModelScope.launch {
+        val currentState = _internalStorageFlow.value as LessonViewState.Success
+        _internalStorageFlow.update {
+            return@update currentState.copy(
+                currentIndex = getNextIndex()
+            )
+        }
+    }
+    
+    fun handleAnswer(isCorrect: Boolean) = viewModelScope.launch {
+        val currentState = _internalStorageFlow.value as LessonViewState.Success
         val newMistakes = if (isCorrect) currentState.mistakes
             else currentState.mistakes + currentState.words[currentState.currentIndex]
         
@@ -93,16 +112,12 @@ class LessonViewModel @Inject constructor(private val repo: DictionaryRepository
                     wordId = currentState.words[currentState.currentIndex].id,
                     mark = 3 * mark
                 )
-            is LessonViewState.Success.StudyMode.UNKN ->
-                _internalStorageFlow.update {
-                    return@update LessonViewState.Error("There was an issue setting study mode")
-                }
             LessonViewState.Success.StudyMode.OVER -> {}
         }
         
         _internalStorageFlow.update {
             return@update currentState.copy(
-                currentIndex = newIndex,
+                currentIndex = getNextIndex(),
                 isTranslationPressed = false,
                 mistakes = newMistakes
             )
@@ -129,6 +144,7 @@ class LessonViewModel @Inject constructor(private val repo: DictionaryRepository
         
         _internalStorageFlow.update {
             return@update currentState.copy(
+                isInitComplete = true,
                 words = newWordsList,
                 mistakes = emptyList(),
                 currentIndex = 0,
@@ -148,10 +164,10 @@ class LessonViewModel @Inject constructor(private val repo: DictionaryRepository
                 to_learn = newWordsList.filter { it.weight < 1f }
                 to_learn = to_learn.shuffled()
                 learned = newWordsList.filter { it.weight == 1f }
-                if (learned.isNotEmpty()) {
-                    newWordsList = to_learn + learned.random()
+                newWordsList = if (learned.isNotEmpty()) {
+                    to_learn + learned.random()
                 } else {
-                    newWordsList = to_learn
+                    to_learn
                 }
             }
             LessonViewState.Success.StudyMode.EXAM ->
@@ -159,6 +175,11 @@ class LessonViewModel @Inject constructor(private val repo: DictionaryRepository
             else -> {}
         }
         return newWordsList
+    }
+    
+    fun markExamCompleted() = viewModelScope.launch {
+        val currentState = _internalStorageFlow.value as LessonViewState.Success
+        repo.setExamCompleted(currentState.subGroup)
     }
     
     fun getScore(): Int {

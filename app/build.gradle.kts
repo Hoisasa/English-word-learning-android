@@ -78,6 +78,8 @@ dependencies {
 
     
     //Core
+    implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.21") // match your Kotlin version
+    implementation("androidx.compose.material:material:1.9.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

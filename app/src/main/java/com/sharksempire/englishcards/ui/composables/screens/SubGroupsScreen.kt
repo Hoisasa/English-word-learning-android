@@ -18,7 +18,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -33,28 +32,30 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sharksempire.englishcards.components.groups.ScrollableTextWithArrow
-import com.sharksempire.englishcards.ui.composables.GroupsViewState
 import com.sharksempire.englishcards.ui.composables.Item
 import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyGreenText
 import com.sharksempire.englishcards.ui.theme.MyPurple
 import com.sharksempire.englishcards.ui.theme.MyPurpleShadow
 import com.sharksempire.englishcards.ui.theme.groupsStyle
-import com.sharksempire.englishcards.viewmodels.MainActivityViewModel
+import com.sharksempire.englishcards.viewmodels.SubGroupsViewModel
 
+sealed interface SubGroupsViewState {
+    object Loading : SubGroupsViewState
+    data class Error(val message: String) : SubGroupsViewState
+    data class Success(val content: List<Item>) : SubGroupsViewState
+}
 @Composable
 fun Display_subgroups(
     onSubgroupSelected: (String) -> Unit,
-    target: String,
-    viewModel: MainActivityViewModel = hiltViewModel(),
+    viewModel: SubGroupsViewModel = hiltViewModel(),
 ) {
-    LaunchedEffect(key1 = target, block = {viewModel.getSubgroups(target)} )
     val state by viewModel.uiState.collectAsState()
     
     when(val viewState = state) {
-        GroupsViewState.Loading -> CircularProgressIndicator(modifier = Modifier.size(50.dp))
-        is GroupsViewState.Error -> Text(text = viewState.message, fontSize = 20.sp)
-        is GroupsViewState.Success -> {
+        SubGroupsViewState.Loading -> CircularProgressIndicator(modifier = Modifier.size(50.dp))
+        is SubGroupsViewState.Error -> Text(text = viewState.message, fontSize = 20.sp)
+        is SubGroupsViewState.Success -> {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -70,7 +71,6 @@ fun Display_subgroups(
                     ) { group ->
                         Button(
                             onClick = {
-                                viewModel.getSubgroups(group.name)
                                 onSubgroupSelected(group.name)
                             },
                             shape = RoundedCornerShape(40.dp),

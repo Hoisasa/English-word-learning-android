@@ -1,13 +1,30 @@
 package com.sharksempire.englishcards.ui.composables
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.SavedStateHandle
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
@@ -69,61 +86,104 @@ sealed interface CurrentTarget {
 }
 
 
-
-
-
-
-
 @Serializable
 sealed interface Screen {
     @Serializable
     object Groups
     @Serializable
-    data class SubGroups(val target: String)
+    data class SubGroups(val target: String) {
+        companion object {
+            fun from(savedStateHandle: SavedStateHandle) =
+                savedStateHandle.toRoute<SubGroups>()
+        }
+    }
     @Serializable
-    data class Review(val target: String)
+    object Review
     @Serializable
     data class Mode(val target: String)
     @Serializable
-    data class Lesson(val mode: LessonViewState.Success.StudyMode)
+    data class Lesson(val mode: String)
     @Serializable
     object Summary
-    @Serializable
-    object LessonGraph
 }
 
 @Composable
 fun MyEnglishApp(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     
-    Surface(modifier) {
-        NavHost(navController = navController, startDestination = Screen.Groups) {
-            composable<Screen.Groups> {
-                Display_groups(
-                    { target ->
-                        navController.navigate(route = Screen.SubGroups(target = target))
-                    },
-//                { target ->
-//                    navController.navigate(route = Screen.Review(target = target))
-//                    }
-                )
+    data class TopLevelRoute<T : Any>(val name: String, val route: T, val icon: ImageVector)
+    
+    val topLevelRoutes = listOf(
+        TopLevelRoute("Learn words", Screen.Groups, Icons.AutoMirrored.Filled.List),
+        TopLevelRoute("Spaced repetition", Screen.Review, Icons.Filled.Refresh)
+    )
+    
+    Scaffold(
+        bottomBar = {
+            BottomNavigation {
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = navBackStackEntry?.destination
+                topLevelRoutes.forEach { topLevelRoute ->
+                    BottomNavigationItem(
+                        icon = {
+                            Icon(
+                                topLevelRoute.icon,
+                                contentDescription = topLevelRoute.name
+                            )
+                        },
+                        label = { Text(topLevelRoute.name) },
+                        selected = currentDestination?.hierarchy?.any { it.hasRoute(topLevelRoute.route::class) } == true,
+                        onClick = {
+                            navController.navigate(topLevelRoute.route) {
+                                // Pop up to the start destination of the graph to
+                                // avoid building up a large stack of destinations
+                                // on the back stack as users select items
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                // Avoid multiple copies of the same destination when
+                                // reselecting the same item
+                                launchSingleTop = true
+                                // Restore state when reselecting a previously selected item
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
             }
+        }
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Groups,
+            Modifier.padding(innerPadding)
+        ) {
+            composable<Screen.Groups> {
+                Display_groups(onGroupSelected = { target ->
+                        navController.navigate(Screen.SubGroups(target))
+                })
+            }
+            
+            composable<Screen.Review> {
+                Text("Spaced repetition")
+            }
+            
             composable<Screen.SubGroups> {
-                val arguments = it.toRoute<Screen.SubGroups>()
                 Display_subgroups(
                     onSubgroupSelected = { target ->
                         navController.navigate(route = Screen.Mode(target = target))
-                    },
-                    target = arguments.target
+                    }
                 )
             }
-            
-            navigation(startDestination = "Mode", route = "LessonGraph"){
+
+
+
+            navigation(startDestination = "Mode", route = "LessonGraph") {
                 composable<Screen.Mode> { backStackEntry ->
                     val parentEntry = remember { navController.getBackStackEntry("LessonGraph") }
                     val lessonVM = hiltViewModel<LessonViewModel>(parentEntry)
                     val arguments = backStackEntry.toRoute<Screen.Mode>()
-                    
+
                     ModeSelectScreen(
                         onModeChosen = { mode ->
                             navController.navigate(route = Screen.Lesson(mode))
@@ -132,27 +192,25 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
                         viewModel = lessonVM,
                     )
                 }
-                
-                composable<Screen.Lesson>(
-                    typeMap = mapOf(
-                        typeOf<LessonViewState.Success.StudyMode>() to LessonViewState.Success.ModeNavType.ModeType
-                    )
-                ) { backStackEntry ->
+
+                composable<Screen.Lesson> { backStackEntry ->
                     val parentEntry = remember { navController.getBackStackEntry("LessonGraph") }
                     val lessonVM = hiltViewModel<LessonViewModel>(parentEntry)
                     val arguments = backStackEntry.toRoute<Screen.Lesson>()
-                    
+                    val modesList = LessonViewState.Success.StudyMode::class.sealedSubclasses.mapNotNull { it.objectInstance }
+                    val modesMap = modesList.associateBy { it.displayName }
+
                     StudyScreen(
                         onLessonFinished = { navController.navigate(route = Screen.Summary) },
-                        mode = arguments.mode,
+                        mode = modesMap[arguments.mode]!!,
                         viewModel = lessonVM,
                     )
                 }
-                
+
                 composable<Screen.Summary> { backStackEntry ->
                     val parentEntry = remember { navController.getBackStackEntry("LessonGraph") }
                     val lessonVM = hiltViewModel<LessonViewModel>(parentEntry)
-                    
+
                     SummaryScreen(
                         onSaveClicked = { navController.navigate(route = Screen.SubGroups) },
                         viewModel = lessonVM
@@ -163,94 +221,6 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
     }
 }
 
-//fun extendDB(context: Context) {
-//    val path = context.getDatabasePath("dictionary.db").absolutePath
-//    val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE)
-//
-//    db.use {
-//        it.execSQL("ALTER TABLE subgroups ADD COLUMN level INTEGER NOT NULL DEFAULT 0")
-//        it.execSQL("UPDATE subgroups SET level = 1 WHERE exam_completed = 1")
-//    }
-//}
-
-//
-//            "ModeSelectScreen" -> {
-//                // Words should not persist across different modes
-//                lessonWords.clear()
-//                restartRequested = true
-//                isLoading = true
-//
-//
-//                endOfLesson = false
-//                ModeSelectScreen(
-//                    {
-//                        studyMode = it
-//                        screenState = "LessonScreen"
-//                    },
-//                    currentSubGroup
-//                )
-//
-//                BackHandler { screenState = "SubGroupsScreen" }
-//            }
-//
-//            "LessonScreen" -> {
-//                Log.d("LoadingLesson", "We entered lesson screen")
-//
-//
-//                LaunchedEffect(restartRequested) {
-//                    if (restartRequested) {
-//                        isLoading = true
-//                        Log.d("LoadingLesson", "load start")
-//                        if (lessonWords.isNotEmpty()) { //then its not the first time we entered the lesson
-//                            updateWeightsOfLessonList(lessonWords, context, currentSubGroup!!.name)
-//                            Log.d("LoadingLesson", "Weight update")
-//                        } else {
-//                            lessonWords.addAll(queryWords(context, currentSubGroup!!.name))
-//                            Log.d("LoadingLesson", "full requery")
-//                        }
-//                        if (studyMode == "Practice") {
-//                            lessonWords.reduceLearnedWordsTo1()
-//                        }
-//                        if (studyMode != "Overview") {
-//                            lessonWords.shuffle()
-//                        } // to be replaced with smart shuffle
-//                        Log.d("Shuffle", "Lesson ready: ${lessonWords.joinToString { it.word }}")
-//                        lessonMistakes.clear()
-//                        endOfLesson = false // only here if it's a clean fresh start
-//                        restartRequested = false
-//                        isLoading = false
-//                        Log.d("LoadingLesson", "load end")
-//                    }
-//                }
-//
-//                if (isLoading) {
-//                    Log.d("LoadingLesson", "We want list of words NOW")
-//                } else {
-//                    if (!endOfLesson) {
-//                        StudyScreen(
-//                            studyMode, lessonWords, lessonMistakes,
-//                            {
-//                                grade = it
-//                                endOfLesson = true
-//                            },
-//                            { restartRequested = true }
-//                        )
-//                    } else {
-//                        SummaryScreen(
-//                            studyMode,
-//                            grade,
-//                            currentSubGroup!!.name,
-//                            lessonMistakes,
-//                            { restartRequested = true },
-//                            { screenState = "ModeSelectScreen" }
-//                        )
-//                    }
-//                }
-//
-//                BackHandler {
-//                    screenState = "ModeSelectScreen"
-//                }
-//            }
 //
 //            "ReviewScreen" -> {
 //                val sql =

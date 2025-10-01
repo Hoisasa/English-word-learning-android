@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MainActivityViewModel @Inject constructor(private val repo: DictionaryRepository) :
+class GroupsViewModel @Inject constructor(private val repo: DictionaryRepository) :
     ViewModel() {
     
     private val _internalStorageFlow = MutableStateFlow<GroupsViewState>(
@@ -20,6 +20,10 @@ class MainActivityViewModel @Inject constructor(private val repo: DictionaryRepo
     )
     
     val uiState = _internalStorageFlow.asStateFlow()
+    
+    init {
+        getGroups()
+    }
     
     fun getGroups() = viewModelScope.launch{
         _internalStorageFlow.update { return@update GroupsViewState.Loading }
@@ -62,46 +66,6 @@ class MainActivityViewModel @Inject constructor(private val repo: DictionaryRepo
             return@update current.copy(
                 filterState = current.filterState.copy(selectedFilters = newValues)
             )
-        }
-    }
-    
-    fun getSubgroups(target: String) = viewModelScope.launch{
-        _internalStorageFlow.update { return@update GroupsViewState.Loading }
-        repo.getSubgroups(target).onSuccess { groups ->
-            _internalStorageFlow.update {
-                return@update GroupsViewState.Success(
-                    filterState = GroupsViewState.Success.FilterState(
-                        listOf("null"),listOf("null")
-                    ),
-                    content = groups
-                )
-            }
-        }.onFailure { exception ->
-            _internalStorageFlow.update {
-                return@update GroupsViewState.Error(
-                    message = exception.message ?: "Unknown error occurred"
-                )
-            }
-        }
-    }
-    
-    fun getWords(target: String) = viewModelScope.launch {
-        _internalStorageFlow.update { return@update GroupsViewState.Loading }
-        repo.getSubgroups(target).onSuccess { groups ->
-            _internalStorageFlow.update {
-                return@update GroupsViewState.Success(
-                    filterState = GroupsViewState.Success.FilterState(
-                        listOf("null"),listOf("null")
-                    ),
-                    content = groups
-                )
-            }
-        }.onFailure { exception ->
-            _internalStorageFlow.update {
-                return@update GroupsViewState.Error(
-                    message = exception.message ?: "Unknown error occurred"
-                )
-            }
         }
     }
 }

@@ -47,6 +47,12 @@ class DictionaryRepository @Inject constructor(
         }
     }
     
+    suspend fun setExamCompleted(subGroup: String): QueryOperation<Unit> {
+        return safeQueryCall {
+            wordsDao.markExamCompleted(subGroup = subGroup)
+        }
+    }
+    
     private inline fun <T> safeQueryCall(apiCall: () -> T): QueryOperation<T> {
         return try {
             QueryOperation.Success(data = apiCall())

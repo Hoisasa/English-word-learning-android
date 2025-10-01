@@ -1,6 +1,5 @@
 package com.sharksempire.englishcards.ui.composables.screens
 
-import android.database.sqlite.SQLiteDatabase
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,9 +16,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,11 +24,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Devices
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -44,15 +37,12 @@ import com.sharksempire.englishcards.ui.theme.GradeColorHigh
 import com.sharksempire.englishcards.ui.theme.GradeColorLow
 import com.sharksempire.englishcards.ui.theme.GradeColorMedium
 import com.sharksempire.englishcards.ui.theme.GradeColorPerfect
-import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyGreenText
 import com.sharksempire.englishcards.ui.theme.MyPurple
 import com.sharksempire.englishcards.ui.theme.MyPurpleShadow
-import com.sharksempire.englishcards.ui.theme.MyRed
 import com.sharksempire.englishcards.ui.theme.PurpleGrey40
 import com.sharksempire.englishcards.ui.theme.summaryStyle
 import com.sharksempire.englishcards.viewmodels.LessonViewModel
-import kotlin.math.roundToInt
 
 @Composable
 fun SummaryScreen(
@@ -152,7 +142,9 @@ fun SummaryScreen(
                 }
                 
                 Button(
-                    onClick = onSaveClicked,
+                    onClick = {
+                        onSaveClicked()
+                    },
                     modifier = Modifier
                         .constrainAs(back) {
                             top.linkTo(mistakes.top)
@@ -266,6 +258,8 @@ fun SummaryScreen(
                     if (viewState.mistakes.size <= 1) {
                         Button(
                             onClick = {
+                                viewModel.markExamCompleted()
+                                onSaveClicked()
                             },
                             modifier = Modifier
                                 .constrainAs(save) {
@@ -307,6 +301,8 @@ fun SummaryScreen(
         }
     }
 }
+
+
 
 fun getGradeColor(lessonScore: Int): Color {
     return when {
