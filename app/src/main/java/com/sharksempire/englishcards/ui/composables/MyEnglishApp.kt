@@ -212,7 +212,11 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
                     val lessonVM = hiltViewModel<LessonViewModel>(parentEntry)
 
                     SummaryScreen(
-                        onSaveClicked = { navController.navigate(route = Screen.SubGroups) },
+                        onSaveClicked = {
+                            navController.navigateUp()
+                            navController.navigateUp()
+                            navController.navigateUp()
+                        },
                         viewModel = lessonVM
                     )
                 }

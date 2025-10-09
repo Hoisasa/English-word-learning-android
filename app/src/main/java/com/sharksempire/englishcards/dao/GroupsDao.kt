@@ -67,23 +67,6 @@ data class GroupsWithProgressData(
 
 
 
-//
-//
-//    fun updateLearnedCount(context: Context) {
-//        val path = context.getDatabasePath("dictionary.db").absolutePath
-//        val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
-//        val cursor = db.rawQuery(
-//            """
-//        SELECT SUM(CASE WHEN words.weight = 1.0 THEN 1 ELSE 0 END)
-//        FROM words
-//        WHERE words.subgroup_name = ?
-//        """.trimIndent(),
-//            arrayOf(name)
-//        )
-//        cursor.use {
-//            if (it.moveToFirst()) {
-//                learned = it.getInt(0)
-//            }
-//        }
-//    }
-//}
+
+
+
