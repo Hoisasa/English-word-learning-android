@@ -7,37 +7,37 @@ config:
 ---
 kanban
 [✅Chosing framework]
-[Chaquopy]@{ priority: "Very High"}
-[QT for android]@{ priority: "Very High"}
-[Jetpack Compose]@{priority: "Low"}
+  [Chaquopy]@{ priority: "Very High"}
+  [QT for android]@{ priority: "Very High"}
+  [Jetpack Compose]@{priority: "Low"}
 [✅Groups screen]
-[Groups view]@{ priority: "Low"}
-[Prepopulated db]@{ priority: "Low"}
-[Add raw queries]@{ priority: "Low"}
+  [Groups view]@{ priority: "Low"}
+  [Prepopulated db]@{ priority: "Low"}
+  [Add raw queries]@{ priority: "Low"}
 [✅Screen switch logic]
-[Added screen state]@{ priority: "Low"}
-[Screen LaunchedEffects]@{ priority: "Low"}
-[Mode selector screen]@{ priority: "Low"}
-[Lesson screen]@{ priority: "Low"}
+  [Added screen state]@{ priority: "Low"}
+  [Screen LaunchedEffects]@{ priority: "Low"}
+  [Mode selector screen]@{ priority: "Low"}
+  [Lesson screen]@{ priority: "Low"}
 [✅Lesson Screens]
-[View for each mode]@{ priority: "Low"}
-[Lesson ConstraintLayout]@{ priority: "Low"}
-[Lesson logic]@{ priority: "Low"}
-[Summary screen]@{ priority: "Low"}
-[Summary logic]@{ priority: "Low"}
+  [View for each mode]@{ priority: "Low"}
+  [Lesson ConstraintLayout]@{ priority: "Low"}
+  [Lesson logic]@{ priority: "Low"}
+  [Summary screen]@{ priority: "Low"}
+  [Summary logic]@{ priority: "Low"}
 [✅Enhancing Lesson]
-[Buttons appearance]@{ priority: "Low"}
-[Progress indicators]@{ priority: "Low"}
-[Smart shuffling logic]@{ priority: "Low"}
-[Clear lesson restart]@{ priority: "Low"}
-[Added data classes]@{ priority: "Low"}
+  [Buttons appearance]@{ priority: "Low"}
+  [Progress indicators]@{ priority: "Low"}
+  [Smart shuffling logic]@{ priority: "Low"}
+  [Clear lesson restart]@{ priority: "Low"}
+  [Added data classes]@{ priority: "Low"}
 [✅Gui quality updates]
-[Added my TextStyles]@{ priority: "Low"}
-[Scrollable text fields]@{ priority: "Low"}
-[Device Rotation fix]@{ priority: "Low"}
-[More progress bars]@{ priority: "Low"}
-[Float vals fix]@{ priority: "Low"}
-[Sound consistency]@{ priority: "Low"}
+  [Added my TextStyles]@{ priority: "Low"}
+  [Scrollable text fields]@{ priority: "Low"}
+  [Device Rotation fix]@{ priority: "Low"}
+  [More progress bars]@{ priority: "Low"}
+  [Float vals fix]@{ priority: "Low"}
+  [Sound consistency]@{ priority: "Low"}
 ```
 
 ```mermaid
