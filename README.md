@@ -1,14 +1,9 @@
-# Sharks' Empire: English
 
 <div align="center">
   <img height="333" src="https://github.com/Hoisasa/English-word-learning/blob/readme/assets/images/sharkonamiTransparent.png?raw=true">
 </div>
+<h1 align="center"> Sharks' Empire: English Android</h1>
 
-
-
-<p align=center>
-  <img src="https://github.com/user-attachments/assets/437e96da-c448-4f78-beb6-f0aba93af242">
-</p>
 
 <p align=center>
 <img alt="Static Badge" src="https://img.shields.io/badge/Kotlin-2.1.21-%237F52FF?logo=kotlin&logoColor=%23EFEFEF">
@@ -22,8 +17,17 @@
 
 
 
-> ### An English Learning app for windows in a form of flashcards.
->  Provides words upto B2 level of English without the need for subscription
+
+<dl align=center>
+  <dt>An English Learning app for windows in a form of flashcards.</dt>
+  <dd>Provides words upto B2 level of English without the need for subscription</dd>
+</dl>
+
+<!-- ## Project timeline -->
+  &nbsp;
+<p align=center>
+  <img src="https://github.com/user-attachments/assets/8c1f9ad7-ee55-414f-80a6-6afe3edd93ef">
+</p>
 
 ## Table of contents
 
@@ -34,14 +38,10 @@
 -  [Credits](#Credits)
 
 ## :camera: Screenshots
-
-<p align=center style="overflow-x:auto; white-space:nowrap; border:1px solid #ccc; padding:5px;">
-<img width="270" height="430" alt="Image" src="https://github.com/user-attachments/assets/68bb61cf-6439-42a2-99d7-e1c428aa274f" />
-</p>
-<p align=center style="overflow-x:auto; white-space:nowrap; border:5px solid #ccc; padding:5px;">
-<img width="270" height="430" alt="Image" src="https://github.com/user-attachments/assets/1fd8dc5b-b4f7-4471-9740-043ecf53935b" />
-    &nbsp;&nbsp;&nbsp;&nbsp;
-<img width="270" height="430" alt="Image" src="https://github.com/user-attachments/assets/3e0ea04a-935a-436d-b6fa-8739895cc822" />
+<p align=center>
+  <img width="300" height="480" alt="Image" src="https://github.com/user-attachments/assets/708af005-9dcc-43f0-863a-10859dec5f84" />
+  <img width="300" height="480" alt="Image" src="https://github.com/user-attachments/assets/0258c158-cc9b-4d2c-ad46-f1fec1c626fa" />
+  <img width="300" height="480" alt="Image" src="https://github.com/user-attachments/assets/af137cde-6555-4dbd-9c21-774ecef17576" />
 </p>
 <details>
 <summary align="center">
@@ -73,7 +73,14 @@ But in order to not be utterly strict it allows one mistake to be completed
 - 🎯**self evaluation** We don't put a goal of checking your typing speed or pronunciation, thus it's your responsibility to evaluate the answer. We also wanted to reduce guessing factor which `four options` introduces so if you see that your translation didn't align with given one - press a `wrong answer` button
 - 🌊👋.**context-sensitive translations** it aims to show beginner how words meanings can vary depending on context
 - 🗣️**target learner language Russian**
+> [!Hint]
 > (**you can provide your own translations for db**) [Example](#add-your-vocabulary-or-locale)
+
+## Credits
+
+This software uses the following packages and resources:
+
+* uses Kokoro tts from [This repository](https://github.com/hexgrad/kokoro)
 
 ```mermaid
 mindmap
@@ -143,10 +150,4 @@ root((Learned Stuff))
 
 ```
 
-
-## Credits
-
-This software uses the following packages and resources:
-
-* uses Kokoro tts from [This repository](https://github.com/hexgrad/kokoro)
 
