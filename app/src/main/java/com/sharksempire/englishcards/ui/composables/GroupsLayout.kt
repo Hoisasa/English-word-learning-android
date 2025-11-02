@@ -35,7 +35,7 @@ sealed interface GroupsViewState {
     data class Error(val message: String) : GroupsViewState
     data class Success(
         val filterState: FilterState,
-        val content: List<Item>
+        val content: List<GroupsWithProgressData>
     ) : GroupsViewState {
         data class FilterState (
             val allFilters: List<String>,
@@ -122,9 +122,9 @@ fun Display_groups(
                     modifier = Modifier.layoutId(buttonsId),
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    val groups = viewState.content.filterIsInstance<Item.GroupsWithProgressData>()
+                    
                     items(
-                        items = groups.filter { it.pos in viewState.filterState.selectedFilters },
+                        items = viewState.content.filter { it.pos in viewState.filterState.selectedFilters },
                         key = { it.name }
                     ) { group ->
                         GroupButtonWithProgress(

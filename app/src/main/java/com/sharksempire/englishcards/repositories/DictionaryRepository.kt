@@ -2,30 +2,30 @@ package com.sharksempire.englishcards.repositories
 
 import com.sharksempire.englishcards.dao.GroupsDao
 import com.sharksempire.englishcards.dao.WordData
-import com.sharksempire.englishcards.dao.WordWeight
 import com.sharksempire.englishcards.dao.WordsDao
-import com.sharksempire.englishcards.ui.composables.Item
+import com.sharksempire.englishcards.ui.composables.GroupsWithProgressData
+import com.sharksempire.englishcards.ui.composables.SpacedRepetitionLevelsWithDateData
 import javax.inject.Inject
 
 class DictionaryRepository @Inject constructor(
     private val groupsDao: GroupsDao,
     private val wordsDao: WordsDao
 ){
-    suspend fun getGroups(): QueryOperation<List<Item.GroupsWithProgressData>> {
+    suspend fun getGroups(): QueryOperation<List<GroupsWithProgressData>> {
         return safeQueryCall {
             groupsDao.queryGroupsWithProgressData()
         }
     }
     
-    suspend fun getSubgroups(mainGroup: String): QueryOperation<List<Item.GroupsWithProgressData>> {
+    suspend fun getSubgroups(mainGroup: String): QueryOperation<List<GroupsWithProgressData>> {
         return safeQueryCall {
             groupsDao.querySubgroupsWithProgressData(mainGroup)
         }
     }
     
-    suspend fun somethingelse(): QueryOperation<List<Item.SpacedRepetitionWordsWithLevel>> {
+    suspend fun getSpacedRepetitionLevels(): QueryOperation<List<SpacedRepetitionLevelsWithDateData>> {
         return safeQueryCall {
-            groupsDao.querySpacedRepetitionGroups()
+            groupsDao.querySpacedRepetitionWordsWithLevel()
         }
     }
     

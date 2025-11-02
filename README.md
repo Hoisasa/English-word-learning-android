@@ -59,9 +59,9 @@
 ## Key Features
 
 There are three modes Overview Practice and Exam.
-While overview just straight up shows the translation others provide it after pressing a designated button.
-In the end all mistakes are shown as so to provide you with a feature to reflect on your answers.
-To gauge the progress of learning each word they have points assigned to them.
+While overview just straight up shows the translation, others provide it after pressing a designated button.
+In the end, all mistakes are shown as so to provide you with a feature to reflect on your answers.
+To gauge the progress of learning each word, they have points assigned to them.
 When you are ready - complete the exam: a more strict area which punishes mistakes more.
 The exam goal is to make as few mistakes as possible
 But in order to not be utterly strict it allows one mistake to be completed

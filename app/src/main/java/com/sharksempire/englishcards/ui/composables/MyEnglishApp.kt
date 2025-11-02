@@ -6,10 +6,8 @@ import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,7 +19,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -32,11 +29,11 @@ import androidx.room.ColumnInfo
 import com.sharksempire.englishcards.ui.composables.screens.Display_subgroups
 import com.sharksempire.englishcards.ui.composables.screens.LessonViewState
 import com.sharksempire.englishcards.ui.composables.screens.ModeSelectScreen
+import com.sharksempire.englishcards.ui.composables.screens.ReviewScreen
 import com.sharksempire.englishcards.ui.composables.screens.StudyScreen
 import com.sharksempire.englishcards.ui.composables.screens.SummaryScreen
 import com.sharksempire.englishcards.viewmodels.LessonViewModel
 import kotlinx.serialization.Serializable
-import kotlin.reflect.typeOf
 
 
 sealed interface ScreenState {
@@ -48,42 +45,27 @@ sealed interface ScreenState {
     object Summary: ScreenState
 }
 
-sealed interface Item {
-    val name: String
-    val pos: String
-    
-    data class GroupsWithProgressData(
-        override val name: String,
-        @ColumnInfo(name = "total_words") val total: Int,
-        @ColumnInfo(name = "learned_words") val learned: Int,
-        override val pos: String
-    ) : Item
-    
-    data class SpacedRepetitionWordsWithLevel(
-        val level: Int,
-        override val name: String,
-        val words_amount: Int,
-        override val pos: String
-    ) : Item
-}
+data class GroupsWithProgressData(
+    val name: String,
+    @ColumnInfo(name = "total_words") val total: Int,
+    @ColumnInfo(name = "learned_words") val learned: Int,
+    val pos: String,
+)
 
+data class SpacedRepetitionLevelsWithDateData(
+    val name: String,
+    val level: Int,
+    @ColumnInfo(name = "total_words") val total: Int,
+    @ColumnInfo(name = "due_words") val due: Int,
+)
 
-sealed interface CurrentTarget {
-    val showFilter: Boolean  // common property
-    
-    data class GroupTarget(
-        override val showFilter: Boolean = true
-    ): CurrentTarget
-    
-    data class SubGroupTarget(
-        val target: String,
-        override val showFilter: Boolean = false
-    ) : CurrentTarget
-    
-    data class RepetitionTarget(
-        override val showFilter: Boolean = true
-    ) : CurrentTarget
-}
+data class SpacedRepetitionLevelsWithDateDataGrouped(
+    val name: String,
+    @ColumnInfo(name = "total_words") val total: Int,
+    @ColumnInfo(name = "due_words") val due: Int,
+    val subgroup: String,
+    val pos: String,
+)
 
 
 @Serializable
@@ -135,16 +117,10 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
                         selected = currentDestination?.hierarchy?.any { it.hasRoute(topLevelRoute.route::class) } == true,
                         onClick = {
                             navController.navigate(topLevelRoute.route) {
-                                // Pop up to the start destination of the graph to
-                                // avoid building up a large stack of destinations
-                                // on the back stack as users select items
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
-                                // Avoid multiple copies of the same destination when
-                                // reselecting the same item
                                 launchSingleTop = true
-                                // Restore state when reselecting a previously selected item
                                 restoreState = true
                             }
                         }
@@ -165,7 +141,15 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
             }
             
             composable<Screen.Review> {
-                Text("Spaced repetition")
+                ReviewScreen(
+//                    onReviewLevelSelected = {
+//
+//                },
+//                   onReviewGroupSelected = {
+//
+//
+//                }
+                )
             }
             
             composable<Screen.SubGroups> {
@@ -175,7 +159,6 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
                     }
                 )
             }
-
 
 
             navigation(startDestination = "Mode", route = "LessonGraph") {

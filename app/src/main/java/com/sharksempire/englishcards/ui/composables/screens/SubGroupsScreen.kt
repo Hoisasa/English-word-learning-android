@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sharksempire.englishcards.components.groups.ScrollableTextWithArrow
-import com.sharksempire.englishcards.ui.composables.Item
+import com.sharksempire.englishcards.ui.composables.GroupsWithProgressData
 import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyGreenText
 import com.sharksempire.englishcards.ui.theme.MyPurple
@@ -43,7 +43,7 @@ import com.sharksempire.englishcards.viewmodels.SubGroupsViewModel
 sealed interface SubGroupsViewState {
     object Loading : SubGroupsViewState
     data class Error(val message: String) : SubGroupsViewState
-    data class Success(val content: List<Item>) : SubGroupsViewState
+    data class Success(val content: List<GroupsWithProgressData>) : SubGroupsViewState
 }
 @Composable
 fun Display_subgroups(
@@ -64,9 +64,8 @@ fun Display_subgroups(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center
                 ) {
-                    val groups = viewState.content.filterIsInstance<Item.GroupsWithProgressData>()
                     items(
-                        items = groups,
+                        items = viewState.content,
                         key = { it.name }
                     ) { group ->
                         Button(

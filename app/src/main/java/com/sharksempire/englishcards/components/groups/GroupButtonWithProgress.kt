@@ -28,19 +28,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sharksempire.englishcards.ui.composables.Item
+import com.sharksempire.englishcards.ui.composables.GroupsWithProgressData
 import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyGreenText
+import com.sharksempire.englishcards.ui.theme.MyPurple
 import com.sharksempire.englishcards.ui.theme.MyPurpleShadow
 import com.sharksempire.englishcards.ui.theme.groupsStyle
 
 @Composable
 fun GroupButtonWithProgress(
     onClick: (String) -> Unit,
-    group: Item, colors: List<Color>,
+    group: GroupsWithProgressData,
+    colors: List<Color> = listOf(MyPurple, MyGreenText, MyGreen, MyPurpleShadow),
     modifier: Modifier = Modifier,
     ) {
-    val groupProgress = (group as? Item.GroupsWithProgressData)
     Button(
         onClick = { onClick(group.name) },
         shape = RoundedCornerShape(40.dp),
@@ -68,7 +69,7 @@ fun GroupButtonWithProgress(
                     .shadow(6.dp, shape = CircleShape)
             ) {
                 CircularProgressIndicator(
-                    progress = { groupProgress!!.learned.toFloat() / groupProgress.total },
+                    progress = { group.learned.toFloat() / group.total },
                     modifier = Modifier.fillMaxSize(),
                     strokeWidth = 13.dp,
                     strokeCap = StrokeCap.Round,
@@ -79,7 +80,7 @@ fun GroupButtonWithProgress(
             Spacer(modifier = Modifier.width(12.dp))
             
             Text(
-                text = "${groupProgress!!.learned}/${groupProgress.total}",
+                text = "${group.learned}/${group.total}",
                 modifier = Modifier.weight(1f),
                 color = colors[1],
                 style = TextStyle(
@@ -109,7 +110,7 @@ fun PreviewGroupButton() {
         item{
             GroupButtonWithProgress(
                 onClick = { },
-                group = Item.GroupsWithProgressData(
+                group = GroupsWithProgressData(
                     name = "Интервальное повторение",
                     learned = 0,
                     total = 1,
