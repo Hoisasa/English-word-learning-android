@@ -26,7 +26,7 @@
 <!-- ## Project timeline -->
   &nbsp;
 <p align=center>
-  <img src="https://github.com/user-attachments/assets/8c1f9ad7-ee55-414f-80a6-6afe3edd93ef">
+  <img src="https://github.com/user-attachments/assets/698416bc-2b62-4eb5-9759-a3e7b41fd085">
 </p>
 
 ## Table of contents
@@ -48,10 +48,9 @@
   <span style="color:blue; font-weight:bold;">Show more screenshots</span>
 </summary>
 <p align=center style="overflow-x:auto; white-space:nowrap; border:1px solid #ccc; padding:5px;">
-<img width="353" height="220" alt="Image" src="https://github.com/user-attachments/assets/8909e0a5-6241-4d0c-8960-a0708b184c55" />
-<img width="353" height="220" alt="Image" src="https://github.com/user-attachments/assets/cda5121e-394c-4588-9351-1bbd87bf9cb4" />
-<img width="353" height="220" alt="Image" src="https://github.com/user-attachments/assets/66151a11-65d9-4bbe-aae3-5d92a5923d98" />
-<img width="353" height="220" alt="Image" src="https://github.com/user-attachments/assets/4e85d2d6-d9a6-46cf-a403-58833056542f" />
+  <img width="300" height="480" alt="Image" src="https://github.com/user-attachments/assets/3d469cca-9381-47ff-9cc2-1ad4f83b9536" />
+  <img width="300" height="480" alt="Image" src="https://github.com/user-attachments/assets/59727734-e372-441e-80c5-bc6ce725d7b9" />
+  <img width="300" height="480" alt="Image" src="https://github.com/user-attachments/assets/780ecef1-9ba0-431b-8c6a-fa3625cd296f" />
 </p>
 </details>
 
