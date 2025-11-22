@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -84,9 +85,14 @@ sealed interface Screen {
     @Serializable
     object ReviewSummary
     @Serializable
-    data class Mode(val target: String)
+    data class Mode(val target: String) {
+        companion object {
+            fun from(savedStateHandle: SavedStateHandle) =
+                savedStateHandle.toRoute<Mode>()
+        }
+    }
     @Serializable
-    data class Lesson(val mode: String)
+    object Lesson
     @Serializable
     object Summary
 }
@@ -152,35 +158,31 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
 
 
             navigation(startDestination = "Mode", route = "LessonGraph") {
-                composable<Screen.Mode> { backStackEntry ->
+                composable<Screen.Mode> {
                     val parentEntry = remember { navController.getBackStackEntry("LessonGraph") }
                     val lessonVM = hiltViewModel<LessonViewModel>(parentEntry)
-                    val arguments = backStackEntry.toRoute<Screen.Mode>()
+
 
                     ModeSelectScreen(
                         onModeChosen = { mode ->
-                            navController.navigate(route = Screen.Lesson(mode))
+                            lessonVM.prepareLesson(mode)
+                            navController.navigate(route = Screen.Lesson)
                         },
-                        target = arguments.target,
                         viewModel = lessonVM,
                     )
                 }
 
-                composable<Screen.Lesson> { backStackEntry ->
+                composable<Screen.Lesson> {
                     val parentEntry = remember { navController.getBackStackEntry("LessonGraph") }
                     val lessonVM = hiltViewModel<LessonViewModel>(parentEntry)
-                    val arguments = backStackEntry.toRoute<Screen.Lesson>()
-                    val modesList = LessonViewState.Success.StudyMode::class.sealedSubclasses.mapNotNull { it.objectInstance }
-                    val modesMap = modesList.associateBy { it.displayName }
 
                     StudyScreen(
                         onLessonFinished = { navController.navigate(route = Screen.Summary) },
-                        mode = modesMap[arguments.mode]!!,
                         viewModel = lessonVM,
                     )
                 }
 
-                composable<Screen.Summary> { backStackEntry ->
+                composable<Screen.Summary> {
                     val parentEntry = remember { navController.getBackStackEntry("LessonGraph") }
                     val lessonVM = hiltViewModel<LessonViewModel>(parentEntry)
 
@@ -201,15 +203,13 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
                 })
             }
             
-            navigation(startDestination = "Mode", route = "ReviewGraph") {
-                composable<Screen.ReviewLesson> { backStackEntry ->
+            navigation(startDestination = "ReviewLesson", route = "ReviewGraph") {
+                composable<Screen.ReviewLesson> {
                     val parentEntry = remember { navController.getBackStackEntry("ReviewGraph") }
                     val reviewVM = hiltViewModel<ReviewLessonViewModel>(parentEntry)
                     
-                    
                     StudyScreen(
                         onLessonFinished = { navController.navigate(route = Screen.ReviewSummary) },
-                        mode = LessonViewState.Success.StudyMode.REVW,
                         viewModel = reviewVM,
                     )
                 }

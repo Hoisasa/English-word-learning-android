@@ -40,11 +40,8 @@ import com.sharksempire.englishcards.viewmodels.LessonViewModel
 @Composable
 fun ModeSelectScreen (
     onModeChosen: (String) -> Unit = {},
-    target: String = "",
     viewModel: LessonViewModel = hiltViewModel(),
 ) {
-    
-    LaunchedEffect(target) { viewModel.getWords(target) }
     
     Box(Modifier
         .fillMaxWidth(),

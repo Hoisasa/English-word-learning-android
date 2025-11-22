@@ -57,219 +57,105 @@ fun SummaryScreen(
         LessonViewState.Loading -> CircularProgressIndicator(modifier = Modifier.size(50.dp))
         is LessonViewState.Error -> Text(text = viewState.message)
         is LessonViewState.Success -> {
-            val lessonScore = viewModel.getScore()
-            ConstraintLayout(
-                modifier = Modifier
-                    .fillMaxSize()
-            
-            ) {
-                val (grade, gradeMark, mistakes, back, repeat, save) = createRefs()
-                val topGuideLine = createGuidelineFromTop(0.04f)
-                val bottomGuideLine = createGuidelineFromBottom(0.25f)
-                val bottomMistakesGuideLine = createGuidelineFromBottom(0.08f)
-                val startGuideLine = createGuidelineFromStart(0.04f)
-                val endGuideLine = createGuidelineFromEnd(0.04f)
-                
-                Text(
-                    lessonScore.toString(),
-                    style = TextStyle(
-                        fontSize = 200.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = getGradeColor(lessonScore),
-                        shadow = Shadow(
-                            color = MyPurpleShadow,
-                            offset = Offset(0f, -16f),  // adjust for shadow position
-                            blurRadius = 16f           // adjust for softness
-                        )
-                    ),
-                    modifier = Modifier
-                        .constrainAs(grade) {
-                            top.linkTo(topGuideLine)
-                            start.linkTo(startGuideLine)
-                            end.linkTo(endGuideLine)
-                        })
-                
-
-                
-                LazyRow(
-                    modifier = Modifier
-                        .constrainAs(gradeMark) {
-                            top.linkTo(grade.bottom)
-                            start.linkTo(startGuideLine)
-                            end.linkTo(endGuideLine)
-                        }
-                        .padding(bottom = 20.dp),
+            when (val lessonDataState = viewState.lessonData) {
+                LessonViewState.LessonData.Loading -> CircularProgressIndicator(modifier = Modifier.size(50.dp))
+                is LessonViewState.LessonData.Ready -> {
+                    val lessonScore = viewModel.getScore()
+                    ConstraintLayout(
+                        modifier = Modifier
+                            .fillMaxSize()
                     
                     ) {
-                }
-                
-                LazyColumn(
-                    modifier = Modifier
-                        .constrainAs(mistakes) {
-                            top.linkTo(gradeMark.bottom)
-                            bottom.linkTo(bottomMistakesGuideLine)
-                            start.linkTo(startGuideLine)
-                            end.linkTo(endGuideLine)
-                            width = Dimension.fillToConstraints
-                            height = Dimension.fillToConstraints
-                        }
-                        .clip(RoundedCornerShape(60.dp))
-                        .background(PurpleGrey40),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    items(
-                        viewState.mistakes
-                    ) { mistake ->
+                        val (grade, gradeMark, mistakes, back, repeat, save) = createRefs()
+                        val topGuideLine = createGuidelineFromTop(0.04f)
+                        val bottomGuideLine = createGuidelineFromBottom(0.25f)
+                        val bottomMistakesGuideLine = createGuidelineFromBottom(0.08f)
+                        val startGuideLine = createGuidelineFromStart(0.04f)
+                        val endGuideLine = createGuidelineFromEnd(0.04f)
                         
-                        Column(
-                            modifier = Modifier.padding(start = 100.dp, end = 100.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            for (item in listOf(mistake.word, mistake.translation)) {
-                                ScrollableTextWithArrow(
-                                    item,
-                                    style = summaryStyle,
-                                )
-                            }
-                        }
-                        
-                        HorizontalDivider(
-                            thickness = 2.dp,
-                            color = getGradeColor(lessonScore).copy(alpha = 0.5f),
-                            modifier = Modifier
-                                .padding(start = 150.dp, end = 150.dp)
-                        )
-                    }
-                }
-                
-                Button(
-                    onClick = {
-                        onSaveClicked()
-                    },
-                    modifier = Modifier
-                        .constrainAs(back) {
-                            top.linkTo(mistakes.top)
-                            bottom.linkTo(bottomGuideLine)
-                            start.linkTo(parent.start)
-                            width = Dimension.value(135.dp)
-                            height = Dimension.fillToConstraints
-                        }
-                        .padding(10.dp)
-                        .shadow(
-                            6.dp,
-                            shape = RoundedCornerShape(40.dp)
-                        ), // shadow with rounded corners
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MyPurple,
-                        contentColor = MyGreenText,
-                    ),
-                ) {
-                    Text(
-                        "Quit",
-                        modifier = Modifier.graphicsLayer {
-                            rotationZ = -90f
-                        },
-                        style = TextStyle(
-                            fontSize = 20.sp, fontWeight = FontWeight.Bold,
-                            shadow = Shadow(
-                                color = MyPurpleShadow,
-                                offset = Offset(-6f, 6f),  // adjust for shadow position
-                                blurRadius = 4f           // adjust for softness
-                            )
-                        )
-                    )
-                }
-                
-                if (viewState.mode == LessonViewState.Success.StudyMode.PRAC) {
-                    Button(
-                        onClick = { restart() },
-                        modifier = Modifier
-                            .constrainAs(repeat) {
-                                top.linkTo(mistakes.top)
-                                bottom.linkTo(bottomGuideLine)
-                                end.linkTo(parent.end)
-                                width = Dimension.value(135.dp)
-                                height = Dimension.fillToConstraints
-                            }
-                            .padding(10.dp)
-                            .shadow(
-                                6.dp,
-                                shape = RoundedCornerShape(40.dp)
-                            ), // shadow with rounded corners
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MyPurple,
-                            contentColor = MyGreenText,
-                        ),
-                    ) {
                         Text(
-                            "🔁",
+                            lessonScore.toString(),
                             style = TextStyle(
-                                fontSize = 30.sp, fontWeight = FontWeight.Bold,
+                                fontSize = 200.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = getGradeColor(lessonScore),
                                 shadow = Shadow(
                                     color = MyPurpleShadow,
-                                    offset = Offset(3f, 6f),
-                                    blurRadius = 4f
+                                    offset = Offset(0f, -16f),  // adjust for shadow position
+                                    blurRadius = 16f           // adjust for softness
                                 )
                             ),
-                        )
-                    }
-                    
-                } else {
-                    
-                    
-                    Button(
-                        onClick = {
-                            restart()
-                        },
-                        modifier = Modifier
-                            .constrainAs(repeat) {
-                                top.linkTo(mistakes.top)
-                                if (viewState.mistakes.size <= 1) {
-                                    bottom.linkTo(save.top)
-                                } else {
-                                    bottom.linkTo(bottomGuideLine)
+                            modifier = Modifier
+                                .constrainAs(grade) {
+                                    top.linkTo(topGuideLine)
+                                    start.linkTo(startGuideLine)
+                                    end.linkTo(endGuideLine)
+                                })
+                        
+                        
+                        
+                        LazyRow(
+                            modifier = Modifier
+                                .constrainAs(gradeMark) {
+                                    top.linkTo(grade.bottom)
+                                    start.linkTo(startGuideLine)
+                                    end.linkTo(endGuideLine)
                                 }
-                                end.linkTo(parent.end)
-                                width = Dimension.value(135.dp)
-                                height = Dimension.fillToConstraints
-                            }
-                            .padding(10.dp)
-                            .shadow(
-                                6.dp,
-                                shape = RoundedCornerShape(40.dp)
-                            ), // shadow with rounded corners
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MyPurple,
-                            contentColor = MyGreenText,
-                        ),
-                    ) {
-                        Text(
-                            "🔁",
-                            style = TextStyle(
-                                fontSize = 30.sp, fontWeight = FontWeight.Bold,
-                                shadow = Shadow(
-                                    color = MyPurpleShadow,
-                                    offset = Offset(3f, 6f),  // adjust for shadow position
-                                    blurRadius = 4f           // adjust for softness
+                                .padding(bottom = 20.dp),
+                            
+                            ) {
+                        }
+                        
+                        LazyColumn(
+                            modifier = Modifier
+                                .constrainAs(mistakes) {
+                                    top.linkTo(gradeMark.bottom)
+                                    bottom.linkTo(bottomMistakesGuideLine)
+                                    start.linkTo(startGuideLine)
+                                    end.linkTo(endGuideLine)
+                                    width = Dimension.fillToConstraints
+                                    height = Dimension.fillToConstraints
+                                }
+                                .clip(RoundedCornerShape(60.dp))
+                                .background(PurpleGrey40),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            items(
+                                lessonDataState.mistakes
+                            ) { mistake ->
+                                
+                                Column(
+                                    modifier = Modifier.padding(start = 100.dp, end = 100.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    for (item in listOf(mistake.word, mistake.translation)) {
+                                        ScrollableTextWithArrow(
+                                            item,
+                                            style = summaryStyle,
+                                        )
+                                    }
+                                }
+                                
+                                HorizontalDivider(
+                                    thickness = 2.dp,
+                                    color = getGradeColor(lessonScore).copy(alpha = 0.5f),
+                                    modifier = Modifier
+                                        .padding(start = 150.dp, end = 150.dp)
                                 )
-                            )
-                        )
-                    }
-                    
-                    if (viewState.mistakes.size <= 1) {
+                            }
+                        }
+                        
                         Button(
                             onClick = {
-                                viewModel.markExamCompleted()
                                 onSaveClicked()
                             },
                             modifier = Modifier
-                                .constrainAs(save) {
-                                    top.linkTo(repeat.bottom)
+                                .constrainAs(back) {
+                                    top.linkTo(mistakes.top)
                                     bottom.linkTo(bottomGuideLine)
-                                    end.linkTo(parent.end)
-                                    height = Dimension.fillToConstraints
+                                    start.linkTo(parent.start)
                                     width = Dimension.value(135.dp)
-                                    
+                                    height = Dimension.fillToConstraints
                                 }
                                 .padding(10.dp)
                                 .shadow(
@@ -282,19 +168,138 @@ fun SummaryScreen(
                             ),
                         ) {
                             Text(
-                                "Save",
-                                style = TextStyle(
-                                    fontSize = 22.sp, fontWeight = FontWeight.Bold,
-                                    shadow = Shadow(
-                                        color = MyPurpleShadow,
-                                        offset = Offset(-6f, 3f),  // adjust for shadow position
-                                        blurRadius = 4f           // adjust for softness
-                                    )
-                                ),
+                                "Quit",
                                 modifier = Modifier.graphicsLayer {
                                     rotationZ = -90f
-                                }
+                                },
+                                style = TextStyle(
+                                    fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                                    shadow = Shadow(
+                                        color = MyPurpleShadow,
+                                        offset = Offset(-6f, 6f),  // adjust for shadow position
+                                        blurRadius = 4f           // adjust for softness
+                                    )
+                                )
                             )
+                        }
+                        
+                        if (lessonDataState.mode == LessonViewState.Success.StudyMode.PRAC) {
+                            Button(
+                                onClick = { restart() },
+                                modifier = Modifier
+                                    .constrainAs(repeat) {
+                                        top.linkTo(mistakes.top)
+                                        bottom.linkTo(bottomGuideLine)
+                                        end.linkTo(parent.end)
+                                        width = Dimension.value(135.dp)
+                                        height = Dimension.fillToConstraints
+                                    }
+                                    .padding(10.dp)
+                                    .shadow(
+                                        6.dp,
+                                        shape = RoundedCornerShape(40.dp)
+                                    ), // shadow with rounded corners
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MyPurple,
+                                    contentColor = MyGreenText,
+                                ),
+                            ) {
+                                Text(
+                                    "🔁",
+                                    style = TextStyle(
+                                        fontSize = 30.sp, fontWeight = FontWeight.Bold,
+                                        shadow = Shadow(
+                                            color = MyPurpleShadow,
+                                            offset = Offset(3f, 6f),
+                                            blurRadius = 4f
+                                        )
+                                    ),
+                                )
+                            }
+                            
+                        } else {
+                            
+                            
+                            Button(
+                                onClick = {
+                                    restart()
+                                },
+                                modifier = Modifier
+                                    .constrainAs(repeat) {
+                                        top.linkTo(mistakes.top)
+                                        if (lessonDataState.mistakes.size <= 1) {
+                                            bottom.linkTo(save.top)
+                                        } else {
+                                            bottom.linkTo(bottomGuideLine)
+                                        }
+                                        end.linkTo(parent.end)
+                                        width = Dimension.value(135.dp)
+                                        height = Dimension.fillToConstraints
+                                    }
+                                    .padding(10.dp)
+                                    .shadow(
+                                        6.dp,
+                                        shape = RoundedCornerShape(40.dp)
+                                    ), // shadow with rounded corners
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MyPurple,
+                                    contentColor = MyGreenText,
+                                ),
+                            ) {
+                                Text(
+                                    "🔁",
+                                    style = TextStyle(
+                                        fontSize = 30.sp, fontWeight = FontWeight.Bold,
+                                        shadow = Shadow(
+                                            color = MyPurpleShadow,
+                                            offset = Offset(3f, 6f),  // adjust for shadow position
+                                            blurRadius = 4f           // adjust for softness
+                                        )
+                                    )
+                                )
+                            }
+                            
+                            if (lessonDataState.mistakes.size <= 1) {
+                                Button(
+                                    onClick = {
+                                        viewModel.markExamCompleted()
+                                        onSaveClicked()
+                                    },
+                                    modifier = Modifier
+                                        .constrainAs(save) {
+                                            top.linkTo(repeat.bottom)
+                                            bottom.linkTo(bottomGuideLine)
+                                            end.linkTo(parent.end)
+                                            height = Dimension.fillToConstraints
+                                            width = Dimension.value(135.dp)
+                                            
+                                        }
+                                        .padding(10.dp)
+                                        .shadow(
+                                            6.dp,
+                                            shape = RoundedCornerShape(40.dp)
+                                        ), // shadow with rounded corners
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MyPurple,
+                                        contentColor = MyGreenText,
+                                    ),
+                                ) {
+                                    Text(
+                                        "Save",
+                                        style = TextStyle(
+                                            fontSize = 22.sp, fontWeight = FontWeight.Bold,
+                                            shadow = Shadow(
+                                                color = MyPurpleShadow,
+                                                offset = Offset(-6f, 3f),  // adjust for shadow position
+                                                blurRadius = 4f           // adjust for softness
+                                            )
+                                        ),
+                                        modifier = Modifier.graphicsLayer {
+                                            rotationZ = -90f
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }

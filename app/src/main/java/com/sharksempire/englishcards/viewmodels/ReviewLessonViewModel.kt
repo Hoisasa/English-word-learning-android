@@ -27,11 +27,13 @@ class ReviewLessonViewModel @Inject constructor(
         repo.getReviewWords(levelTarget, subgroupTarget).onSuccess { words ->
             _internalStorageFlow.update {
                 return@update LessonViewState.Success(
-                    isInitComplete = true,
-                    subGroup = null,
+                    subGroup = "blah",
                     rawWords = words,
-                    words = words,
-                    mode = LessonViewState.Success.StudyMode.REVW
+                    lessonData = LessonViewState.LessonData.Ready(
+                        words = words.shuffled()
+                            .sortedBy { it.subgroupName },
+                        mode = resolveModeFromString("Review")
+                    ),
                 )
             }
         }.onFailure { exception ->
@@ -45,13 +47,14 @@ class ReviewLessonViewModel @Inject constructor(
     
     override fun handleAnswer(isCorrect: Boolean) = viewModelScope.launch {
         val currentState = _internalStorageFlow.value as LessonViewState.Success
-        val newMistakes = if (isCorrect) currentState.mistakes
-            else currentState.mistakes + currentState.words[currentState.currentIndex]
+        val data = currentState.lessonData as LessonViewState.LessonData.Ready
+        val newMistakes = if (isCorrect) data.mistakes
+            else data.mistakes + data.words[data.currentIndex]
         
-        when(currentState.mode) {
+        when(data.mode) {
             is LessonViewState.Success.StudyMode.REVW -> {
                 repo.updateLevel(
-                    wordId = currentState.words[currentState.currentIndex].id,
+                    wordId = data.words[data.currentIndex].id,
                     isCorrect
                 )
             }
@@ -62,14 +65,16 @@ class ReviewLessonViewModel @Inject constructor(
         
         _internalStorageFlow.update {
             return@update currentState.copy(
-                currentIndex = getNextIndex(),
-                isTranslationPressed = false,
-                mistakes = newMistakes
+                lessonData = data.copy(
+                    currentIndex = getNextIndex(),
+                    isTranslationPressed = false,
+                    mistakes = newMistakes
+                ),
             )
         }
     }
     
-    override fun prepareLesson(): Job {
-        TODO("Not yet implemented")
+    override fun restartLesson(): Job {
+        TODO("Lesson resetting query")
     }
 }

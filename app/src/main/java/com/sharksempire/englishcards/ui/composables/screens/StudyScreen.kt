@@ -33,6 +33,7 @@ import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sharksempire.englishcards.dao.WordData
+import com.sharksempire.englishcards.ui.composables.screens.LessonViewState.Success.StudyMode
 import com.sharksempire.englishcards.ui.theme.MyGreen
 import com.sharksempire.englishcards.ui.theme.MyGreenText
 import com.sharksempire.englishcards.ui.theme.MyPurple
@@ -41,6 +42,8 @@ import com.sharksempire.englishcards.ui.theme.MyRed
 import com.sharksempire.englishcards.ui.theme.groupsStyle
 import com.sharksempire.englishcards.viewmodels.AbstractLessonViewModel
 import kotlinx.coroutines.Job
+import kotlinx.serialization.Serializable
+import javax.annotation.meta.When
 import kotlin.math.roundToInt
 
 val studyLayout = ConstraintSet {
@@ -208,14 +211,9 @@ sealed interface LessonViewState {
     object Loading: LessonViewState
     data class Error(val message: String): LessonViewState
     data class Success(
-        val subGroup: String?,
+        val subGroup: String,
         val rawWords: List<WordData>,
-        val words: List<WordData>,
-        val mode: StudyMode = StudyMode.OVER,
-        val mistakes: List<WordData> = emptyList(),
-        val currentIndex: Int = 0,
-        val isTranslationPressed: Boolean = false,
-        val isInitComplete: Boolean = false
+        val lessonData: LessonData,
     ): LessonViewState {
         sealed class StudyMode (
             val displayName: String,
@@ -233,227 +231,239 @@ sealed interface LessonViewState {
                 "Practice",
                 studyLayout,
                 AbstractLessonViewModel::translate,
-                AbstractLessonViewModel::prepareLesson,
+                AbstractLessonViewModel::restartLesson,
             )
             object EXAM: StudyMode(
                 "Exam",
                 studyLayout,
                 AbstractLessonViewModel::translate,
-                AbstractLessonViewModel::prepareLesson,
+                AbstractLessonViewModel::restartLesson,
             )
-            
             object REVW: StudyMode(
                 "Review",
                 studyLayout,
                 AbstractLessonViewModel::translate,
-                AbstractLessonViewModel::prepareLesson,
+                AbstractLessonViewModel::restartLesson,
             )
         }
+    }
+    
+    sealed interface LessonData {
+        object Loading: LessonData
+        data class Ready(
+            val words: List<WordData>,
+            val mode: StudyMode = StudyMode.OVER,
+            val mistakes: List<WordData> = emptyList(),
+            val currentIndex: Int = 0,
+            val isTranslationPressed: Boolean = false,
+        ): LessonData
     }
 }
 
 @Composable
 fun StudyScreen(
     onLessonFinished: () -> Unit,
-    mode: LessonViewState.Success.StudyMode,
     viewModel: AbstractLessonViewModel,
 ) {
 
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-
-
-    LaunchedEffect(true) {
-        viewModel.setMode(mode)
-    }
     
     when (val viewState = state) {
         LessonViewState.Loading -> CircularProgressIndicator(modifier = Modifier.size(50.dp))
         is LessonViewState.Error -> Text(text = viewState.message, fontSize = 20.sp)
         is LessonViewState.Success -> {
-
-            ConstraintLayout(
-                constraintSet = viewState.mode.viewConstraints,
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                
-                val context = LocalContext.current
-                val current = viewModel.getCurrentWord()
-                val assetPath = buildAssetFilePath(
-                    current.subgroupName,
-                    current.word
-                )
-                
-                LaunchedEffect(viewState.currentIndex) {
-                    playOggFromAssets(context, assetPath)
-                }
-                
-                Text(
-                    "⭐".repeat((current.weight * viewModel.MAX_POINTS).roundToInt()),
-                    style = TextStyle(
-                        fontSize = 38.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                    modifier = Modifier
-                        .layoutId("points")
-                        .padding(bottom = 230.dp)
-                )
-                
-                
-                Text(
-                    current.word,
-                    style = TextStyle(
-                        fontSize = 50.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                    modifier = Modifier
-                        .layoutId("word")
-                )
-                
-                
-                Text(
-                    "",
-                    style = TextStyle(
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                    modifier = Modifier
-                        .layoutId("transcription")
-                )
-                
-                val showTranslation = when (viewState.mode) {
-                    LessonViewState.Success.StudyMode.OVER -> true
-                    else -> viewState.isTranslationPressed
-                }
-                
-                if (showTranslation) {
-                    Text(
-                        current.translation,
-                        style = TextStyle(
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        ),
-                        modifier = Modifier
-                            .layoutId("translation")
-                    )
-                }
-                
-                Button( onClick = {
-                    viewModel.handleAnswer(isCorrect = true)
-                    if (viewState.currentIndex == viewState.words.size -1) {
-                        onLessonFinished()
-                    }
-                },
-                    modifier = Modifier
-                        .layoutId("correctAnswer")
-                        .padding(end = 120.dp)
-                        .fillMaxHeight(0.08f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MyGreen,
-                        contentColor = Color(0xFF555555),
-                    ),
-                ) {
-                    Text("Yes", style = TextStyle(fontSize = 30.sp))
-                }
-                
-                Button(
-                    onClick = {
-                        viewModel.handleAnswer(isCorrect = false)
-                        if (viewState.currentIndex == viewState.words.size -1) {
-                            onLessonFinished()
-                        }
-                    },
-                    modifier = Modifier
-                        .layoutId("wrongAnswer")
-                        .padding(start = 120.dp)
-                        .fillMaxHeight(0.08f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MyRed,
-                        contentColor = MyGreenText,
-                    ),
-                ) {
-                    Text("No", style = TextStyle(fontSize = 30.sp))
-                }
-                
-                
-                Button(
-                    onClick = { viewState.mode.onActionClicked(viewModel) },
-                    modifier = Modifier
-                        .layoutId("actionButton")
-                        .padding(top = 30.dp)
-                        .fillMaxHeight(0.08f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MyPurple,
-                        contentColor = MyGreenText,
-                    ),
-                ) {
-                    Text(text = when (viewState.mode) {
-                        LessonViewState.Success.StudyMode.OVER -> "Next word"
-                        else -> "Translate"},
-                        style = TextStyle(fontSize = 30.sp))
-                }
-                
-                
-                Button(
-                    onClick = { playOggFromAssets(context, assetPath) },
-                    modifier = Modifier
-                        .layoutId("audio")
-                        .padding(start = 20.dp, bottom = 10.dp)
-                        .width(80.dp)
-                        .height(80.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = MyGreenText,
-                    ),
-                ) {
-                    Text("🔉", style = TextStyle(fontSize = 30.sp))
-                }
-                
-                Button(
-                    onClick = { viewState.mode.onRestartClicked(viewModel) },
-                    modifier = Modifier
-                        .layoutId("repeat")
-                        .padding(end = 20.dp, bottom = 10.dp)
-                        .width(80.dp)
-                        .height(80.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = MyGreenText,
-                    ),
-                ) {
-                    Text("🔁", style = TextStyle(fontSize = 30.sp))
-                }
-                
-                
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .layoutId("progressBar")
-                        .padding(50.dp),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    
-                    LinearProgressIndicator(
-                        progress = { (viewState.currentIndex +1).toFloat() / viewState.words.size },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(10.dp),
-                        color = MyPurple,
-                        trackColor = ProgressIndicatorDefaults.linearTrackColor,
-                        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-                    )
-                    Text(
-                        text = "${viewState.currentIndex + 1} / ${viewState.words.size}",
-                        color = MyPurpleShadow,
-                        modifier = Modifier.padding(bottom = 16.dp),
-                        style = groupsStyle.copy(
-                            fontSize = 32.sp,
-                            shadow = Shadow(
-                                color = Color.White,
-                                offset = Offset(0f, 0f),
-                                blurRadius = 2f
-                            )
+            when (val lessonDataState = viewState.lessonData) {
+                LessonViewState.LessonData.Loading -> CircularProgressIndicator(modifier = Modifier.size(50.dp))
+                is LessonViewState.LessonData.Ready -> {
+                    ConstraintLayout(
+                        constraintSet = lessonDataState.mode.viewConstraints,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        
+                        val context = LocalContext.current
+                        val current = viewModel.getCurrentWord()
+                        val assetPath = buildAssetFilePath(
+                            current.subgroupName,
+                            current.word
                         )
-                    )
+                        
+                        LaunchedEffect(lessonDataState.currentIndex) {
+                            playOggFromAssets(context, assetPath)
+                        }
+                        
+                        Text(
+                            "⭐".repeat((current.weight * viewModel.MAX_POINTS).roundToInt()),
+                            style = TextStyle(
+                                fontSize = 38.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            modifier = Modifier
+                                .layoutId("points")
+                                .padding(bottom = 230.dp)
+                        )
+                        
+                        
+                        Text(
+                            current.word,
+                            style = TextStyle(
+                                fontSize = 50.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            modifier = Modifier
+                                .layoutId("word")
+                        )
+                        
+                        
+                        Text(
+                            "",
+                            style = TextStyle(
+                                fontSize = 30.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            modifier = Modifier
+                                .layoutId("transcription")
+                        )
+                        
+                        val showTranslation = when (lessonDataState.mode) {
+                            StudyMode.OVER -> true
+                            else -> lessonDataState.isTranslationPressed
+                        }
+                        
+                        if (showTranslation) {
+                            Text(
+                                current.translation,
+                                style = TextStyle(
+                                    fontSize = 30.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
+                                modifier = Modifier
+                                    .layoutId("translation")
+                            )
+                        }
+                        
+                        Button(
+                            onClick = {
+                                viewModel.handleAnswer(isCorrect = true)
+                                if (lessonDataState.currentIndex == lessonDataState.words.size - 1) {
+                                    onLessonFinished()
+                                }
+                            },
+                            modifier = Modifier
+                                .layoutId("correctAnswer")
+                                .padding(end = 120.dp)
+                                .fillMaxHeight(0.08f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MyGreen,
+                                contentColor = Color(0xFF555555),
+                            ),
+                        ) {
+                            Text("Yes", style = TextStyle(fontSize = 30.sp))
+                        }
+                        
+                        Button(
+                            onClick = {
+                                viewModel.handleAnswer(isCorrect = false)
+                                if (lessonDataState.currentIndex == lessonDataState.words.size - 1) {
+                                    onLessonFinished()
+                                }
+                            },
+                            modifier = Modifier
+                                .layoutId("wrongAnswer")
+                                .padding(start = 120.dp)
+                                .fillMaxHeight(0.08f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MyRed,
+                                contentColor = MyGreenText,
+                            ),
+                        ) {
+                            Text("No", style = TextStyle(fontSize = 30.sp))
+                        }
+                        
+                        
+                        Button(
+                            onClick = { lessonDataState.mode.onActionClicked(viewModel) },
+                            modifier = Modifier
+                                .layoutId("actionButton")
+                                .padding(top = 30.dp)
+                                .fillMaxHeight(0.08f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MyPurple,
+                                contentColor = MyGreenText,
+                            ),
+                        ) {
+                            Text(
+                                text = when (lessonDataState.mode) {
+                                    LessonViewState.Success.StudyMode.OVER -> "Next word"
+                                    else -> "Translate"
+                                },
+                                style = TextStyle(fontSize = 30.sp)
+                            )
+                        }
+                        
+                        
+                        Button(
+                            onClick = { playOggFromAssets(context, assetPath) },
+                            modifier = Modifier
+                                .layoutId("audio")
+                                .padding(start = 20.dp, bottom = 10.dp)
+                                .width(80.dp)
+                                .height(80.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MyGreenText,
+                            ),
+                        ) {
+                            Text("🔉", style = TextStyle(fontSize = 30.sp))
+                        }
+                        
+                        Button(
+                            onClick = { lessonDataState.mode.onRestartClicked(viewModel) },
+                            modifier = Modifier
+                                .layoutId("repeat")
+                                .padding(end = 20.dp, bottom = 10.dp)
+                                .width(80.dp)
+                                .height(80.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MyGreenText,
+                            ),
+                        ) {
+                            Text("🔁", style = TextStyle(fontSize = 30.sp))
+                        }
+                        
+                        
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .layoutId("progressBar")
+                                .padding(50.dp),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            
+                            LinearProgressIndicator(
+                                progress = { (lessonDataState.currentIndex + 1).toFloat() / lessonDataState.words.size },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(10.dp),
+                                color = MyPurple,
+                                trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                                strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                            )
+                            Text(
+                                text = "${lessonDataState.currentIndex + 1} / ${lessonDataState.words.size}",
+                                color = MyPurpleShadow,
+                                modifier = Modifier.padding(bottom = 16.dp),
+                                style = groupsStyle.copy(
+                                    fontSize = 32.sp,
+                                    shadow = Shadow(
+                                        color = Color.White,
+                                        offset = Offset(0f, 0f),
+                                        blurRadius = 2f
+                                    )
+                                )
+                            )
+                        }
+                    }
                 }
             }
         }
