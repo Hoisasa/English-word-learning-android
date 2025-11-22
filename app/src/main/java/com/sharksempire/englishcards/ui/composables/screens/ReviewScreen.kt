@@ -53,6 +53,7 @@ sealed interface ReviewViewState {
 
 @Composable
 fun ReviewScreen(
+    onReviewSelected: (Int, String?) -> Unit,
     viewModel: SpacedRepetitionViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -70,7 +71,7 @@ fun ReviewScreen(
                 ) { group ->
                     
                     Button(
-                        onClick = {  },
+                        onClick = { onReviewSelected(group.level, null)},
                         shape = RoundedCornerShape(40.dp),
                         modifier = Modifier
                             .fillMaxWidth()

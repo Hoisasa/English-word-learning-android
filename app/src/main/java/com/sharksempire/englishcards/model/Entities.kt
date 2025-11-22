@@ -2,13 +2,11 @@ package com.example.dict.db
 
 import androidx.room.*
 
-/* 1. POS -------------------------------------------------------------- */
 @Entity(tableName = "pos")
 data class POSEntity(
     @PrimaryKey val name: String
 )
 
-/* 2. main_groups ------------------------------------------------------ */
 @Entity(
     tableName = "main_groups",
     foreignKeys = [ForeignKey(
@@ -24,7 +22,6 @@ data class GroupEntity(
     @ColumnInfo(name = "pos_name") val posName: String?          // NOT NULL via SQLAlchemy
 )
 
-/* 3. subgroups -------------------------------------------------------- */
 @Entity(
     tableName = "subgroups",
     foreignKeys = [ForeignKey(
@@ -41,7 +38,6 @@ data class SubGroupEntity(
     @ColumnInfo(name = "exam_completed_at") val examCompletedAt: Int?, // store as epoch millis
 )
 
-/* 4. words ------------------------------------------------------------ */
 @Entity(
     tableName = "words",
     foreignKeys = [ForeignKey(
@@ -64,7 +60,6 @@ data class WordEntity(
     @ColumnInfo(name = "subgroup_name") val subgroupName: String?       // NOT NULL via SQLAlchemy
 )
 
-/* 5. grades ----------------------------------------------------------- */
 @Entity(
     tableName = "grades",
     foreignKeys = [ForeignKey(

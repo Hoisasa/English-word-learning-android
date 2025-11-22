@@ -17,10 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -35,7 +31,6 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sharksempire.englishcards.dao.WordData
 import com.sharksempire.englishcards.ui.theme.MyGreen
@@ -44,7 +39,7 @@ import com.sharksempire.englishcards.ui.theme.MyPurple
 import com.sharksempire.englishcards.ui.theme.MyPurpleShadow
 import com.sharksempire.englishcards.ui.theme.MyRed
 import com.sharksempire.englishcards.ui.theme.groupsStyle
-import com.sharksempire.englishcards.viewmodels.LessonViewModel
+import com.sharksempire.englishcards.viewmodels.AbstractLessonViewModel
 import kotlinx.coroutines.Job
 import kotlin.math.roundToInt
 
@@ -213,7 +208,7 @@ sealed interface LessonViewState {
     object Loading: LessonViewState
     data class Error(val message: String): LessonViewState
     data class Success(
-        val subGroup: String,
+        val subGroup: String?,
         val rawWords: List<WordData>,
         val words: List<WordData>,
         val mode: StudyMode = StudyMode.OVER,
@@ -222,28 +217,36 @@ sealed interface LessonViewState {
         val isTranslationPressed: Boolean = false,
         val isInitComplete: Boolean = false
     ): LessonViewState {
-        sealed class StudyMode(
+        sealed class StudyMode (
             val displayName: String,
             val viewConstraints: ConstraintSet,
-            val onActionClicked: LessonViewModel.() -> Job,
-            val onRestartClicked: LessonViewModel.() -> Job,
+            val onActionClicked: AbstractLessonViewModel.() -> Job,
+            val onRestartClicked: AbstractLessonViewModel.() -> Job,
         ) {
             object OVER: StudyMode(
                 "Overview",
                 overviewLayout,
-                LessonViewModel::setNextIndex,
-                LessonViewModel::resetIndex,
+                AbstractLessonViewModel::setNextIndex,
+                AbstractLessonViewModel::resetIndex,
             )
             object PRAC: StudyMode(
                 "Practice",
                 studyLayout,
-                LessonViewModel::translate,
-                LessonViewModel::prepareLesson,
+                AbstractLessonViewModel::translate,
+                AbstractLessonViewModel::prepareLesson,
             )
-            object EXAM: StudyMode("Exam",
+            object EXAM: StudyMode(
+                "Exam",
                 studyLayout,
-                LessonViewModel::translate,
-                LessonViewModel::prepareLesson,
+                AbstractLessonViewModel::translate,
+                AbstractLessonViewModel::prepareLesson,
+            )
+            
+            object REVW: StudyMode(
+                "Review",
+                studyLayout,
+                AbstractLessonViewModel::translate,
+                AbstractLessonViewModel::prepareLesson,
             )
         }
     }
@@ -253,23 +256,21 @@ sealed interface LessonViewState {
 fun StudyScreen(
     onLessonFinished: () -> Unit,
     mode: LessonViewState.Success.StudyMode,
-    viewModel: LessonViewModel = hiltViewModel()
+    viewModel: AbstractLessonViewModel,
 ) {
 
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
 
     LaunchedEffect(true) {
-        val modesList = LessonViewState.Success.StudyMode::class.sealedSubclasses.mapNotNull { it.objectInstance }
-        val modesMap = modesList.associateBy { it.displayName }
-        
-        viewModel.setMode(modesMap[mode.displayName]!!)
+        viewModel.setMode(mode)
     }
     
     when (val viewState = state) {
         LessonViewState.Loading -> CircularProgressIndicator(modifier = Modifier.size(50.dp))
         is LessonViewState.Error -> Text(text = viewState.message, fontSize = 20.sp)
         is LessonViewState.Success -> {
+
             ConstraintLayout(
                 constraintSet = viewState.mode.viewConstraints,
                 modifier = Modifier.fillMaxSize(),
@@ -278,10 +279,13 @@ fun StudyScreen(
                 val context = LocalContext.current
                 val current = viewModel.getCurrentWord()
                 val assetPath = buildAssetFilePath(
-                    viewState.subGroup,
+                    current.subgroupName,
                     current.word
                 )
                 
+                LaunchedEffect(viewState.currentIndex) {
+                    playOggFromAssets(context, assetPath)
+                }
                 
                 Text(
                     "⭐".repeat((current.weight * viewModel.MAX_POINTS).roundToInt()),
@@ -294,14 +298,6 @@ fun StudyScreen(
                         .padding(bottom = 230.dp)
                 )
                 
-                var lastPlayedIndex by rememberSaveable { mutableIntStateOf(-1) }
-                
-                LaunchedEffect(viewState.currentIndex) {
-                    if (viewState.currentIndex != lastPlayedIndex) {
-                        playOggFromAssets(context, assetPath)
-                        lastPlayedIndex = viewState.currentIndex
-                    }
-                }
                 
                 Text(
                     current.word,
@@ -323,7 +319,7 @@ fun StudyScreen(
                     modifier = Modifier
                         .layoutId("transcription")
                 )
-
+                
                 val showTranslation = when (viewState.mode) {
                     LessonViewState.Success.StudyMode.OVER -> true
                     else -> viewState.isTranslationPressed
@@ -342,11 +338,11 @@ fun StudyScreen(
                 }
                 
                 Button( onClick = {
-                        viewModel.handleAnswer(isCorrect = true)
-                        if (viewState.currentIndex == viewState.words.size -1) {
-                            onLessonFinished()
-                        }
-                    },
+                    viewModel.handleAnswer(isCorrect = true)
+                    if (viewState.currentIndex == viewState.words.size -1) {
+                        onLessonFinished()
+                    }
+                },
                     modifier = Modifier
                         .layoutId("correctAnswer")
                         .padding(end = 120.dp)
@@ -377,8 +373,8 @@ fun StudyScreen(
                 ) {
                     Text("No", style = TextStyle(fontSize = 30.sp))
                 }
-                    
-                    
+                
+                
                 Button(
                     onClick = { viewState.mode.onActionClicked(viewModel) },
                     modifier = Modifier
@@ -390,7 +386,10 @@ fun StudyScreen(
                         contentColor = MyGreenText,
                     ),
                 ) {
-                    Text("Translate", style = TextStyle(fontSize = 30.sp))
+                    Text(text = when (viewState.mode) {
+                        LessonViewState.Success.StudyMode.OVER -> "Next word"
+                        else -> "Translate"},
+                        style = TextStyle(fontSize = 30.sp))
                 }
                 
                 
@@ -408,7 +407,7 @@ fun StudyScreen(
                 ) {
                     Text("🔉", style = TextStyle(fontSize = 30.sp))
                 }
-
+                
                 Button(
                     onClick = { viewState.mode.onRestartClicked(viewModel) },
                     modifier = Modifier
@@ -423,7 +422,7 @@ fun StudyScreen(
                 ) {
                     Text("🔁", style = TextStyle(fontSize = 30.sp))
                 }
-
+                
                 
                 Box(
                     modifier = Modifier
@@ -460,5 +459,3 @@ fun StudyScreen(
         }
     }
 }
-
-

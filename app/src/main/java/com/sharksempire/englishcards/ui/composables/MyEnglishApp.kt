@@ -33,17 +33,8 @@ import com.sharksempire.englishcards.ui.composables.screens.ReviewScreen
 import com.sharksempire.englishcards.ui.composables.screens.StudyScreen
 import com.sharksempire.englishcards.ui.composables.screens.SummaryScreen
 import com.sharksempire.englishcards.viewmodels.LessonViewModel
+import com.sharksempire.englishcards.viewmodels.ReviewLessonViewModel
 import kotlinx.serialization.Serializable
-
-
-sealed interface ScreenState {
-    object Group: ScreenState
-    object SubGroup: ScreenState
-    object Repetition: ScreenState
-    object ModeChoose: ScreenState
-    object Lesson: ScreenState
-    object Summary: ScreenState
-}
 
 data class GroupsWithProgressData(
     val name: String,
@@ -61,6 +52,7 @@ data class SpacedRepetitionLevelsWithDateData(
 
 data class SpacedRepetitionLevelsWithDateDataGrouped(
     val name: String,
+    val level: Int,
     @ColumnInfo(name = "total_words") val total: Int,
     @ColumnInfo(name = "due_words") val due: Int,
     val subgroup: String,
@@ -80,7 +72,17 @@ sealed interface Screen {
         }
     }
     @Serializable
-    object Review
+    object ReviewGroups
+    @Serializable
+    data class ReviewLesson(val levelTarget: Int, val subgroupTarget: String?) {
+        companion object {
+            fun from(savedStateHandle: SavedStateHandle) =
+                savedStateHandle.toRoute<ReviewLesson>()
+        }
+    }
+    
+    @Serializable
+    object ReviewSummary
     @Serializable
     data class Mode(val target: String)
     @Serializable
@@ -97,7 +99,7 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
     
     val topLevelRoutes = listOf(
         TopLevelRoute("Learn words", Screen.Groups, Icons.AutoMirrored.Filled.List),
-        TopLevelRoute("Spaced repetition", Screen.Review, Icons.Filled.Refresh)
+        TopLevelRoute("Spaced repetition", Screen.ReviewGroups, Icons.Filled.Refresh)
     )
     
     Scaffold(
@@ -136,26 +138,14 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
         ) {
             composable<Screen.Groups> {
                 Display_groups(onGroupSelected = { target ->
-                        navController.navigate(Screen.SubGroups(target))
+                        navController.navigate(route = Screen.SubGroups(target))
                 })
             }
-            
-            composable<Screen.Review> {
-                ReviewScreen(
-//                    onReviewLevelSelected = {
-//
-//                },
-//                   onReviewGroupSelected = {
-//
-//
-//                }
-                )
-            }
-            
+
             composable<Screen.SubGroups> {
                 Display_subgroups(
                     onSubgroupSelected = { target ->
-                        navController.navigate(route = Screen.Mode(target = target))
+                        navController.navigate(route = Screen.Mode(target))
                     }
                 )
             }
@@ -204,35 +194,40 @@ fun MyEnglishApp(modifier: Modifier = Modifier) {
                     )
                 }
             }
+            
+            composable<Screen.ReviewGroups> {
+                ReviewScreen( onReviewSelected = { levelTarget, subgroupTarget ->
+                    navController.navigate(route = Screen.ReviewLesson(levelTarget, subgroupTarget))
+                })
+            }
+            
+            navigation(startDestination = "Mode", route = "ReviewGraph") {
+                composable<Screen.ReviewLesson> { backStackEntry ->
+                    val parentEntry = remember { navController.getBackStackEntry("ReviewGraph") }
+                    val reviewVM = hiltViewModel<ReviewLessonViewModel>(parentEntry)
+                    
+                    
+                    StudyScreen(
+                        onLessonFinished = { navController.navigate(route = Screen.ReviewSummary) },
+                        mode = LessonViewState.Success.StudyMode.REVW,
+                        viewModel = reviewVM,
+                    )
+                }
+                
+                composable<Screen.ReviewSummary> {
+                    val parentEntry = remember { navController.getBackStackEntry("ReviewGraph") }
+                    val reviewVM = hiltViewModel<ReviewLessonViewModel>(parentEntry)
+                    
+                    SummaryScreen(
+                        onSaveClicked = {
+                            navController.navigateUp()
+                            navController.navigateUp()
+                            navController.navigateUp()
+                        },
+                        viewModel = reviewVM
+                    )
+                }
+            }
         }
     }
 }
-
-//
-//            "ReviewScreen" -> {
-//                val sql =
-//                    """SELECT
-//                    subgroups.name AS name,
-//                    COUNT(words.id) AS total_words,
-//                    SUM(CASE WHEN words.weight = 1.0 THEN 1 ELSE 0 END) AS learned_words,
-//                    pos.name AS pos,
-//                    subgroups.level AS level
-//                    FROM subgroups
-//                            JOIN main_groups ON subgroups.main_group_id = main_groups.name
-//                            JOIN pos ON main_groups.pos_name = pos.name
-//                            JOIN words ON words.subgroup_name = subgroups.name
-//                            WHERE subgroups.level > 0
-//                    GROUP BY subgroups.name, pos.name
-//                    """.trimIndent()
-//
-//                ReviewScreen(queryOverDict(context, sql), buttonFunction = { queryTarget: GroupsWithProgressData ->
-//                    currentSubGroup = queryTarget
-//                    screenState = "ModeSelectScreen"
-//                })
-//
-//                BackHandler {
-//                    screenState = "GroupsScreen"
-//                }
-//            }
-//        }
-

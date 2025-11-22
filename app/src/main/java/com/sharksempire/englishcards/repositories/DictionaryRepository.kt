@@ -5,6 +5,7 @@ import com.sharksempire.englishcards.dao.WordData
 import com.sharksempire.englishcards.dao.WordsDao
 import com.sharksempire.englishcards.ui.composables.GroupsWithProgressData
 import com.sharksempire.englishcards.ui.composables.SpacedRepetitionLevelsWithDateData
+import com.sharksempire.englishcards.ui.composables.screens.LessonViewState
 import javax.inject.Inject
 
 class DictionaryRepository @Inject constructor(
@@ -35,9 +36,45 @@ class DictionaryRepository @Inject constructor(
         }
     }
     
-    suspend fun updateWeight(wordId: Int, mark: Float): QueryOperation<Unit> {
+    suspend fun getReviewWords(levelTarget: Int, subGroup: String?): QueryOperation<List<WordData>> {
+        return safeQueryCall {
+            wordsDao.queryReviewWords(levelTarget,subGroup)
+        }
+    }
+    
+    suspend fun updateWeight(
+        wordId: Int,
+        mode: LessonViewState.Success.StudyMode,
+        isCorrect: Boolean,
+        MAX_POINTS: Int,
+    ): QueryOperation<Unit> {
+        var mark: Float
+        mark = if (isCorrect) 1f else -1f
+        mark /= MAX_POINTS
+        mark *= when (mode) {
+            is LessonViewState.Success.StudyMode.PRAC -> 1
+            is LessonViewState.Success.StudyMode.EXAM -> 3
+            LessonViewState.Success.StudyMode.OVER,
+                LessonViewState.Success.StudyMode.REVW-> 0
+        }
+
         return safeQueryCall {
             wordsDao.queryUpdateWeight(wordId = wordId, mark = mark)
+        }
+    }
+    
+    suspend fun updateLevel(
+        wordId: Int,
+        isCorrect: Boolean,
+    ): QueryOperation<Unit> {
+        return safeQueryCall {
+            wordsDao.queryUpdateLevel(wordId = wordId, isCorrect)
+        }
+    }
+    
+    suspend fun setExamCompleted(subGroup: String): QueryOperation<Unit> {
+        return safeQueryCall {
+            wordsDao.markExamCompleted(subGroup = subGroup)
         }
     }
     
@@ -47,11 +84,6 @@ class DictionaryRepository @Inject constructor(
         }
     }
     
-    suspend fun setExamCompleted(subGroup: String): QueryOperation<Unit> {
-        return safeQueryCall {
-            wordsDao.markExamCompleted(subGroup = subGroup)
-        }
-    }
     
     private inline fun <T> safeQueryCall(apiCall: () -> T): QueryOperation<T> {
         return try {

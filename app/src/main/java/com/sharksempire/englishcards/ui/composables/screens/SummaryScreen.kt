@@ -42,13 +42,14 @@ import com.sharksempire.englishcards.ui.theme.MyPurple
 import com.sharksempire.englishcards.ui.theme.MyPurpleShadow
 import com.sharksempire.englishcards.ui.theme.PurpleGrey40
 import com.sharksempire.englishcards.ui.theme.summaryStyle
-import com.sharksempire.englishcards.viewmodels.LessonViewModel
+import com.sharksempire.englishcards.viewmodels.AbstractLessonViewModel
+import com.sharksempire.englishcards.viewmodels.ReviewLessonViewModel
 
 @Composable
 fun SummaryScreen(
     onSaveClicked: () -> Unit,
     restart: () -> Unit = {},
-    viewModel: LessonViewModel = hiltViewModel()
+    viewModel: AbstractLessonViewModel,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     
@@ -206,8 +207,8 @@ fun SummaryScreen(
                                 fontSize = 30.sp, fontWeight = FontWeight.Bold,
                                 shadow = Shadow(
                                     color = MyPurpleShadow,
-                                    offset = Offset(3f, 6f),  // adjust for shadow position
-                                    blurRadius = 4f           // adjust for softness
+                                    offset = Offset(3f, 6f),
+                                    blurRadius = 4f
                                 )
                             ),
                         )
